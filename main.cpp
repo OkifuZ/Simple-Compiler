@@ -9,9 +9,10 @@
 int main() {
 	std::ifstream infile("testfile.txt");
 	std::ofstream outfile("output.txt");
-	Parser parser(infile, outfile);
+	Parser parser(infile);
 	parser.nextSym();
 	SynNode* tree = parser.parse();
-	tree->print(outfile);
+	//tree->print(outfile);
+	parser.printError(outfile);
 	return 0;
 }

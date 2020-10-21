@@ -9,25 +9,28 @@
 #include <set>
 #include "lexical.h"
 #include "synTree.h"
+#include "errHand.h"
+
+#define PRINT_ERROR_MESSAGE
 
 class Parser {
 public:
-    Parser(std::istream& file, std::ostream& out) :
-        lexicalAnalyzer(LexicalAnalyzer(file)), outStream(out) {};
+    Parser(std::istream& file) :
+        lexicalAnalyzer(LexicalAnalyzer(file)) {}
 
     SynNode* parse();
 
 // private:
     LexSymbol symbol;
     LexicalAnalyzer lexicalAnalyzer;
-    std::ostream& outStream;
+
     std::vector<LexSymbol> record;
     std::set<std::string> returnFuncList;
     std::set<std::string> nonreturnFuncList;    
     int pos = 0;
     int top = 0;
 
-    void printSym();
+
 
     bool nextSym();
     void preReadSym(int time = 1);
@@ -77,8 +80,19 @@ public:
     SynNode* nonrefuncDefineP();
     SynNode* mainP();
 
+    void addErrorMessage(int line, char iden, std::string mess="") {
+        errorList.push_back(ErrorMessage(line, iden, mess));
+    }
+
+    void printError(std::ostream& out);
+
+
 private:
     bool flushed = true;
+    
+    SymbolTable symbolTable;
+    std::vector<ErrorMessage> errorList;
+
 
 };
 

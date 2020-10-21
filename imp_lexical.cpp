@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "lexical.h"
+#include "parser.h"
 
 using namespace std;
 
@@ -64,7 +65,8 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
             c = this->file.get();
             if (c == '\'') return TYPE_SYM::CHARCON;
         }
-        error(1);
+        printPos(17761);
+        return TYPE_SYM::ERROR;
     }
     else if (c == '"') {
         c = this->file.get();
@@ -75,7 +77,8 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         if (c == '"') {
             return TYPE_SYM::STRCON;
         }
-        error(2);
+        printPos(20098);
+        return TYPE_SYM::ERROR;
     }
     else if (c == '-') {
         token += c;
@@ -132,7 +135,11 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         if (c == '=') {
             token += c;
             return TYPE_SYM::NEQ;
-        } else error(3);
+        }
+        else {
+            printPos(3);
+            return TYPE_SYM::ERROR;
+        }
     }
     else if (c == ':') {
         token += c;
@@ -170,7 +177,7 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         token += c;
         return TYPE_SYM::RBRACE;
     }
-    return TYPE_SYM::ENDS;
+    return TYPE_SYM::ERROR;
 }
 
 /*END CLASS: LexicalAnalyzer*/
@@ -205,8 +212,10 @@ bool isASCII(const char& c) {
     return (c <= 126 && c >= 35) || c == 32 || c == 33;
 }
 
-void error(int i){
+void printPos(int i){
+#ifdef PRINT_ERROR_MESSAGE
     cout << "error!!!" << " " << i << endl;
+#endif // PRINT_ERROR_MESSAGE
 }
 
 /*END SOME TOOLS*/

@@ -10,7 +10,7 @@
 
 std::string upperCase(const std::string& s);
 
-void error(int i);
+void printPos(int i);
 
 bool isEmpty(const char& c);
 
