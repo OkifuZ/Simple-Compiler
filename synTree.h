@@ -6,6 +6,7 @@
 #include <iostream>
 #include "lexical.h"
 #include "parser.h"
+#include "errHand.h"
 
 
 enum class TYPE_NTS {
@@ -33,11 +34,19 @@ extern const std::string get_STRING_NTS(TYPE_NTS type);
 
 class SynNode {
 public:
-	SynNode(std::string name_) : name(name_) {}
+	SynNode(std::string name_, int iv=0, char cv='\0') : 
+		name(name_), INT_value(iv), CHAR_value(cv) {}
 	
 	virtual void print(std::ostream&) = 0;
 	virtual std::string getName() const { return name; }
 	virtual ~SynNode() = default;
+	
+	virtual int getINTvalue() { return INT_value; }
+	virtual char getCHARvalue() { return CHAR_value; }
+	virtual int getIDENtype() { return TYPE; }
+	int INT_value = 0;
+	char CHAR_value = '\0';
+	int TYPE = TYPE_VOID;
 
 protected:
 	std::string name;
@@ -46,8 +55,8 @@ protected:
 
 class TerNode : public SynNode {
 public:
-	TerNode(LexSymbol sym_) : 
-		SynNode(sym_.token), symbol(sym_) {}
+	TerNode(LexSymbol sym_, int iv = 0, char cv = '\0') :
+		SynNode(sym_.token, iv, cv), symbol(sym_) {}
 	
 	void print(std::ostream&) override;
 
@@ -61,12 +70,15 @@ private:
 
 class NonTerNode : public SynNode {
 public:
-	NonTerNode(TYPE_NTS type_, bool high_) :
-		SynNode(get_STRING_NTS(type_)), type(type_), highlighted(high_) {}
+	NonTerNode(TYPE_NTS type_, bool high_, int iv = 0, char cv = '\0') :
+		SynNode(get_STRING_NTS(type_), iv, cv), type(type_), highlighted(high_) {}
 	
 	void print(std::ostream&) override;
 	void addChild(SynNode* s) { children.push_back(s); }
 	TYPE_NTS getType() const { return type; }
+	SynNode* getLastChild() {
+		return children.back();
+	}
 
 private:
 	TYPE_NTS type;

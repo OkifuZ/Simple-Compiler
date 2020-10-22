@@ -37,7 +37,7 @@ public:
 	std::string name;
 
 	bool isFormalPar = false;
-	int parFuncPos = -1;
+	//int parFuncPos = -1;
 	int firstDimSize = -1;
 	int secDimSize = -1;
 	// if is formal parameter, funcPos >= 0
@@ -49,8 +49,8 @@ public:
 	SymTableEntry(std::string name, int cate, int type_, int layer_, int dim_=0, int size1=-1, int size2=-1) :
 		category(cate), type(type_), layer(layer_), dim(dim_), firstDimSize(size1), secDimSize(size2) {}
 	
-	SymTableEntry(std::string name, int cate, int type_, int layer_, bool isFormal, int parFuncPos_) :
-		category(cate), type(type_), layer(layer_), isFormalPar(isFormal), parFuncPos(parFuncPos_) {}
+	SymTableEntry(std::string name, int cate, int type_, int layer_, bool isFormal/*, int parFuncPos_*/) :
+		category(cate), type(type_), layer(layer_), isFormalPar(isFormal)/*, parFuncPos(parFuncPos_)*/ {}
 	
 	TYPE_SYM_CLASS getClass();
 
@@ -76,8 +76,8 @@ public:
 	void insertSymbol(std::string name, int cate, int type, int layer, int dim=0, int size1=-1, int size2=-1) {
 		symTable.push_back(SymTableEntry(name, cate, type, layer, dim, size1, size2));
 	}
-	void insertSymbol(std::string name, int cate, int type, int layer, bool isFormal, int funcPos) {
-		symTable.push_back(SymTableEntry(name, cate, type, layer, isFormal, funcPos));
+	void insertSymbol(std::string name, int cate, int type, int layer, bool isFormal/*, int funcPos*/) {
+		symTable.push_back(SymTableEntry(name, cate, type, layer, isFormal/*, funcPos*/));
 	}
 
 	void popSymbol() {
@@ -87,6 +87,8 @@ public:
 	SymTableEntry topSymbol() {
 		return symTable.back();
 	}
+
+	bool duplicateName(std::string name, int layer);
 
 
 };

@@ -41,51 +41,70 @@ public:
     SynNode* unsignedIntP();
     SynNode* intP();
     SynNode* charP();
-    SynNode* constDefP();
-    SynNode* constDecP();
-    SynNode* idenP(std::string* S = nullptr);
+    SynNode* constDefP(int layer); //*
+    SynNode* constDecP(int layer); //*
+    SynNode* idenP(std::string* S = nullptr, int *line = nullptr);
     SynNode* decHeadP(std::string*);
     SynNode* constP();
-    SynNode* varDecP();
-    SynNode* varDefP();
-    SynNode* varDerWithInitP();
-    SynNode* varDerWithoutInitP();
+    SynNode* varDecP(int layer);
+    SynNode* varDefP(int layer);
+    SynNode* varDerWithInitP(int layer, int type);
+    SynNode* varDerWithoutInitP(int layer, int type);
     SynNode* typeIdenP();
-    SynNode* arrayConstP(); // {}
-    SynNode* doubleArrayConstP(); // {{}}
-    SynNode* oneDdeclareP(); // [x]
-    SynNode* arguListP();
-    SynNode* termP();
-    SynNode* factorP();
-    SynNode* expressionP();
-    SynNode* callFuncSenP();
-    SynNode* valueArgueListP();
-    SynNode* assignSenP();
-    SynNode* sentenceP();
-    SynNode* sentenceListP();
-    SynNode* ifelseSenP();
-    SynNode* conditionP();
-    SynNode* loopSenP();
-    SynNode* stepLengthP();
-    SynNode* switchSenP();
-    SynNode* caseListP();
-    SynNode* caseSenP();
-    SynNode* defaultP();
-    SynNode* readSenP();
-    SynNode* writeSenP();
-    SynNode* returnSenP();
-    SynNode* compareOpP();
-    SynNode* compoundSenP();
-    SynNode* refuncDefineP();
-    SynNode* nonrefuncDefineP();
-    SynNode* mainP();
+    SynNode* arrayConstP(int size); // {}
+    SynNode* doubleArrayConstP(int size1, int size2); // {{}}
+    SynNode* oneDdeclareP(int* size); // [x]
+    SynNode* arguListP(int layer);
+    SynNode* termP(int layer);
+    SynNode* factorP(int layer);
+    SynNode* expressionP(int layer);
+    SynNode* callFuncSenP(int layer);
+    SynNode* valueArgueListP(int layer);
+    SynNode* assignSenP(int layer);
+    SynNode* sentenceP(int layer);
+    SynNode* sentenceListP(int layer);
+    SynNode* ifelseSenP(int layer);
+    SynNode* conditionP(int layer);
+    SynNode* loopSenP(int layer);
+    SynNode* stepLengthP(int layer);
+    SynNode* switchSenP(int layer);
+    SynNode* caseListP(int layer);
+    SynNode* caseSenP(int layer);
+    SynNode* defaultP(int layer);
+    SynNode* readSenP(int layer);
+    SynNode* writeSenP(int layer);
+    SynNode* returnSenP(int layer);
+    SynNode* compareOpP(int layer);
+    SynNode* compoundSenP(int layer);
+    SynNode* refuncDefineP(int layer);
+    SynNode* nonrefuncDefineP(int layer);
+    SynNode* mainP(int layer=0);
 
     void addErrorMessage(int line, char iden, std::string mess="") {
         errorList.push_back(ErrorMessage(line, iden, mess));
     }
 
+    bool checkDuplicate(std::string name, int layer) {
+        return symbolTable.duplicateName(name, layer);
+    }
+
     void printError(std::ostream& out);
 
+    int str2int(std::string s) {
+        int ans = 0;
+        char c;
+        for (int i = 0; i < s.size(); i++) {
+            c = s[i];
+            if (c >= '9' || c <= '0') printPos(88754);
+            ans = ans * 10 + (c - '0');
+        }
+        return ans;
+    }
+
+    char str2char(std::string s) {
+        if (s.size() > 1) printPos(8069);
+        return s[0];
+    }
 
 private:
     bool flushed = true;
