@@ -44,7 +44,7 @@ public:
     SynNode* constDefP(int layer); //*
     SynNode* constDecP(int layer); //*
     SynNode* idenP(std::string* S = nullptr, int *line = nullptr);
-    SynNode* decHeadP(std::string*);
+    SynNode* decHeadP(std::string*, int* line = nullptr);
     SynNode* constP();
     SynNode* varDecP(int layer);
     SynNode* varDefP(int layer);
@@ -54,12 +54,12 @@ public:
     SynNode* arrayConstP(int size); // {}
     SynNode* doubleArrayConstP(int size1, int size2); // {{}}
     SynNode* oneDdeclareP(int* size); // [x]
-    SynNode* arguListP(int layer);
+    SynNode* arguListP(int layer, int*num=nullptr);
     SynNode* termP(int layer);
     SynNode* factorP(int layer);
     SynNode* expressionP(int layer);
     SynNode* callFuncSenP(int layer);
-    SynNode* valueArgueListP(int layer);
+    SynNode* valueArgueListP(int layer, int argunum);
     SynNode* assignSenP(int layer);
     SynNode* sentenceP(int layer);
     SynNode* sentenceListP(int layer);
@@ -86,6 +86,12 @@ public:
 
     bool checkDuplicate(std::string name, int layer) {
         return symbolTable.duplicateName(name, layer);
+    }
+
+    bool getIDENtype(std::string name, int *type, int layer) {
+        int TYPE = symbolTable.idenTYPE(name, layer);
+        *type = TYPE;
+        return TYPE != TYPE_ERROR;
     }
 
     void printError(std::ostream& out);

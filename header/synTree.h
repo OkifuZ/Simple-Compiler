@@ -43,10 +43,16 @@ public:
 	
 	virtual int getINTvalue() { return INT_value; }
 	virtual char getCHARvalue() { return CHAR_value; }
-	virtual int getIDENtype() { return TYPE; }
+	virtual int getIDENtype() { return IDEN_TYPE; }
+	virtual bool isCHARexp() { return CHAR_EXP == 1; }
+	virtual void setCHARexp(bool isChar) { 
+		if (isChar) CHAR_EXP = 1;
+		else CHAR_EXP = 0;
+	}
 	int INT_value = 0;
 	char CHAR_value = '\0';
-	int TYPE = TYPE_VOID;
+	int IDEN_TYPE = TYPE_VOID;
+	int CHAR_EXP = -1;
 
 protected:
 	std::string name;

@@ -1,4 +1,4 @@
-#include "lexical.h"
+ï»¿#include "lexical.h"
 #include "parser.h"
 #include "synTree.h"
 #include <iostream>
@@ -135,7 +135,7 @@ inline SynNode* Parser::constDefP(int layer) {
         nextSym();
         node->addChild(idenP(&NAME, &line));
         if (checkDuplicate(NAME, LAYER)) {
-            addErrorMessage(line, 'b', "³£Á¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+            addErrorMessage(line, 'b', "å¸¸é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
         }
         if (!(symbol.type == TYPE_SYM::ASSIGN)) {
             printPos(414123);
@@ -149,7 +149,7 @@ inline SynNode* Parser::constDefP(int layer) {
             nextSym();
             node->addChild(idenP(&NAME, &line));
             if (checkDuplicate(NAME, LAYER)) {
-                addErrorMessage(line, 'b', "³£Á¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+                addErrorMessage(line, 'b', "å¸¸é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
             }
             if (!(symbol.type == TYPE_SYM::ASSIGN)) printPos(97135);
             node->addChild(new TerNode(symbol));
@@ -164,7 +164,7 @@ inline SynNode* Parser::constDefP(int layer) {
         nextSym();
         node->addChild(idenP(&NAME, &line));
         if (checkDuplicate(NAME, LAYER)) {
-            addErrorMessage(line, 'b', "³£Á¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+            addErrorMessage(line, 'b', "å¸¸é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
         }
         if (!(this->symbol.type == TYPE_SYM::ASSIGN)) {
             printPos(3);
@@ -178,7 +178,7 @@ inline SynNode* Parser::constDefP(int layer) {
             nextSym();
             node->addChild(idenP(&NAME, &line));
             if (checkDuplicate(NAME, LAYER)) {
-                addErrorMessage(line, 'b', "³£Á¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+                addErrorMessage(line, 'b', "å¸¸é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
             }
             if (!(symbol.type == TYPE_SYM::ASSIGN)) printPos(97135);
             node->addChild(new TerNode(symbol));
@@ -201,7 +201,7 @@ inline SynNode* Parser::constDecP(int layer) {
         nextSym();
         node->addChild(constDefP(LAYER));
         if (!(symbol.type == TYPE_SYM::SEMICN)) { 
-            addErrorMessage(symbol.line, 'k', "³£Á¿¶¨ÒåÖĞÈ±ÉÙ·ÖºÅ");
+            addErrorMessage(symbol.line, 'k', "å¸¸é‡å®šä¹‰ä¸­ç¼ºå°‘åˆ†å·");
             printPos(76262); 
         }
         node->addChild(new TerNode(symbol));
@@ -214,7 +214,7 @@ inline SynNode* Parser::constDecP(int layer) {
         nextSym();
         node->addChild(constDefP(LAYER));
         if (!(this->symbol.type == TYPE_SYM::SEMICN)) {
-            addErrorMessage(symbol.line, 'k', "³£Á¿¶¨ÒåÖĞÈ±ÉÙ·ÖºÅ");
+            addErrorMessage(symbol.line, 'k', "å¸¸é‡å®šä¹‰ä¸­ç¼ºå°‘åˆ†å·");
             printPos(51242);
         }
         node->addChild(new TerNode(symbol));
@@ -233,13 +233,15 @@ inline SynNode* Parser::idenP(string* s, int* line) { // both default = nullptr
     return node;
 }
 
-inline SynNode* Parser::decHeadP(string* s = nullptr) {
+inline SynNode* Parser::decHeadP(string* s, int* line) {
     NonTerNode* node = new NonTerNode(TYPE_NTS::DEC_HEAD, true);
     if (this->symbol.type == TYPE_SYM::INTTK || 
         this->symbol.type == TYPE_SYM::CHARTK) {
         node->addChild(new TerNode(symbol));
         nextSym();
+        *line = symbol.line;
         node->addChild(idenP(s));
+        node->IDEN_TYPE = symbol.type == TYPE_SYM::INTTK ? TYPE_INT : TYPE_CHAR; 
     } else {
         printPos(3313);
     }
@@ -271,7 +273,7 @@ inline SynNode* Parser::arrayConstP(int size) {
             i++;
             if (i > SIZE) {
                 printPos(99965);
-                addErrorMessage(symbol.line, 'n', "Ò»Î¬Êı×é³õÊ¼»¯¸öÊı²»Æ¥Åä");
+                addErrorMessage(symbol.line, 'n', "ä¸€ç»´æ•°ç»„åˆå§‹åŒ–ä¸ªæ•°ä¸åŒ¹é…");
             }
             nextSym();
             node->addChild(constP());
@@ -303,7 +305,7 @@ inline SynNode* Parser::doubleArrayConstP(int size1, int size2) {
             i++;
             if (i > SIZE2) {
                 printPos(91651);
-                addErrorMessage(symbol.line, 'n', "¶şÎ¬Êı×é³õÊ¼»¯Î¬Êı²»Æ¥Åä");
+                addErrorMessage(symbol.line, 'n', "äºŒç»´æ•°ç»„åˆå§‹åŒ–ç»´æ•°ä¸åŒ¹é…");
             }
         }
         if (!(symbol.type == TYPE_SYM::RBRACE)) printPos(84762);
@@ -324,7 +326,7 @@ inline SynNode* Parser::oneDdeclareP(int* size) {
         *size = node->getLastChild()->INT_value;
         if (!(symbol.type == TYPE_SYM::RBRACK)) {
             printPos(36536);
-            addErrorMessage(symbol.line, 'm', "Ò»Î¬Êı×é¶¨ÒåÎŞÓÒÀ¨ºÅ");
+            addErrorMessage(symbol.line, 'm', "ä¸€ç»´æ•°ç»„å®šä¹‰æ— å³æ‹¬å·");
         }
         node->addChild(new TerNode(symbol));
         nextSym();
@@ -340,7 +342,7 @@ inline SynNode* Parser::varDerWithInitP(int layer, int type) {
     NonTerNode* node = new NonTerNode(TYPE_NTS::VARDEF_WITH_INIT, true);
     node->addChild(idenP(&NAME, &line));
     if (checkDuplicate(NAME, LAYER)) {
-        addErrorMessage(line, 'b', "ÓĞ³õÊ¼»¯µÄ±äÁ¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+        addErrorMessage(line, 'b', "æœ‰åˆå§‹åŒ–çš„å˜é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
     }
     if (symbol.type == TYPE_SYM::ASSIGN) {
         node->addChild(new TerNode(symbol));
@@ -380,7 +382,7 @@ inline SynNode* Parser::varDerWithoutInitP(int layer, int type) {
     NonTerNode* node = new NonTerNode(TYPE_NTS::VAR_DEFWIOU_INIT, true);
     node->addChild(idenP(&NAME, &line));
     if (checkDuplicate(NAME, LAYER)) {
-        addErrorMessage(line, 'b', "ÎŞ³õÊ¼»¯±äÁ¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+        addErrorMessage(line, 'b', "æ— åˆå§‹åŒ–å˜é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
     }
     int dim = 0;
     if (symbol.type == TYPE_SYM::LBRACK) {
@@ -405,7 +407,7 @@ inline SynNode* Parser::varDerWithoutInitP(int layer, int type) {
         nextSym();
         node->addChild(idenP(&NAME));
         if (checkDuplicate(NAME, LAYER)) {
-            addErrorMessage(line, 'b', "ÎŞ³õÊ¼»¯±äÁ¿¶¨ÒåÊ±Ãû×ÖÖØ¶¨Òå");
+            addErrorMessage(line, 'b', "æ— åˆå§‹åŒ–å˜é‡å®šä¹‰æ—¶åå­—é‡å®šä¹‰");
         }
         int dim = 0;
         if (symbol.type == TYPE_SYM::LBRACK) {
@@ -490,12 +492,12 @@ inline SynNode* Parser::varDefP(int layer) {
 inline SynNode* Parser::typeIdenP() { // no highlight
     NonTerNode* node = new NonTerNode(TYPE_NTS::TYPEIDEN, false);
     if (symbol.type == TYPE_SYM::INTTK) {
-        node->TYPE = TYPE_INT;
+        node->IDEN_TYPE = TYPE_INT;
         node->addChild(new TerNode(symbol));
         nextSym();
     }
     else if (symbol.type == TYPE_SYM::CHARTK) {
-        node->TYPE = TYPE_CHAR;
+        node->IDEN_TYPE = TYPE_CHAR;
         node->addChild(new TerNode(symbol));
         nextSym();
     } {
@@ -504,9 +506,9 @@ inline SynNode* Parser::typeIdenP() { // no highlight
     return node;
 }
 
-inline SynNode* Parser::arguListP(int layer) {
+inline SynNode* Parser::arguListP(int layer, int*num) {
     int LAYER = layer;
-    int CATE = CAT_VAR, TYPE, line = 0;
+    int CATE = CAT_VAR, TYPE, line = 0, n = 0;
     string NAME;
     NonTerNode* node = new NonTerNode(TYPE_NTS::ARGLIST, true);
     if (symbol.type == TYPE_SYM::INTTK || symbol.type == TYPE_SYM::CHARTK) {
@@ -514,6 +516,7 @@ inline SynNode* Parser::arguListP(int layer) {
         TYPE = node->getLastChild()->getIDENtype();
         node->addChild(idenP(&NAME));
         symbolTable.insertSymbol(NAME, CATE, TYPE, LAYER, true);
+        n++;
         while (symbol.type == TYPE_SYM::COMMA) {
             node->addChild(new TerNode(symbol));
             nextSym();
@@ -521,43 +524,51 @@ inline SynNode* Parser::arguListP(int layer) {
             TYPE = node->getLastChild()->getIDENtype();
             node->addChild(idenP(&NAME, &line));
             if (checkDuplicate(NAME, LAYER)) {
-                addErrorMessage(line, 'b', "²ÎÊıÁĞ±íÖĞÖØ¸´¶¨ÒåÃû×Ö");
+                addErrorMessage(line, 'b', "å‚æ•°åˆ—è¡¨ä¸­é‡å¤å®šä¹‰åå­—");
             }
             symbolTable.insertSymbol(NAME, CATE, TYPE, LAYER, true);
+            n++;
         }
     }
+    *num = n;
     return node;
 }
 
 inline SynNode* Parser::termP(int layer) {
     int LAYER = layer;
     NonTerNode* node = new NonTerNode(TYPE_NTS::TERM, true);
+    node->setCHARexp(false);
     node->addChild(factorP(LAYER));
+    if (node->getLastChild()->isCHARexp()) {
+        node->setCHARexp(true);
+    }
     while (symbol.type == TYPE_SYM::MULT || symbol.type == TYPE_SYM::DIV) {
         node->addChild(new TerNode(symbol));
         nextSym();
         node->addChild(factorP(LAYER));
+        node->setCHARexp(false); // more than one factor, not a char type term
     }
     return node;
 }
 
 inline SynNode* Parser::factorP(int layer) {
     int LAYER = layer;
-
     NonTerNode* node = new NonTerNode(TYPE_NTS::FACTOR, true);
+    node->setCHARexp(false);
     if (symbol.type == TYPE_SYM::LPARENT) {
         node->addChild(new TerNode(symbol));
         nextSym();
         node->addChild(expressionP(LAYER));
         if (!(symbol.type == TYPE_SYM::RPARENT)) { 
             printPos(914151);
-            addErrorMessage(symbol.line, 'l', "Òò×ÓÖĞÈ±ÉÙÓÒÀ¨ºÅ");
+            addErrorMessage(symbol.line, 'l', "å› å­ä¸­ç¼ºå°‘å³æ‹¬å·");
         }
         node->addChild(new TerNode(symbol));
         nextSym();
     }
     else if (symbol.type == TYPE_SYM::CHARCON) {
         node->addChild(new TerNode(symbol));
+        node->setCHARexp(true);
         nextSym();
     }
     else if (symbol.type == TYPE_SYM::PLUS ||
@@ -565,6 +576,14 @@ inline SynNode* Parser::factorP(int layer) {
         node->addChild(intP());
     }
     else if (symbol.type == TYPE_SYM::IDENFR) {
+        int TYPE;
+        string NAME = symbol.token;
+        if (getIDENtype(NAME, &TYPE, LAYER)) {
+            addErrorMessage(symbol.line, 'c', "å› å­ä¸­å¼•ç”¨äº†æœªå®šä¹‰çš„åå­—");
+        }
+        if (TYPE == TYPE_CHAR) {
+            node->setCHARexp(true);
+        }
         preReadSym(1);
         if (!cacheContainsSym(TYPE_SYM::LPARENT)) {
             flushPreRead();
@@ -572,54 +591,77 @@ inline SynNode* Parser::factorP(int layer) {
             if (symbol.type == TYPE_SYM::LBRACK) {
                 node->addChild(new TerNode(symbol));
                 nextSym();
-                node->addChild(expressionP());
-                if (!(symbol.type == TYPE_SYM::RBRACK)) printPos(6516151);
+                node->addChild(expressionP(LAYER)); // TODO
+                if (node->getLastChild()->isCHARexp()) {
+                    addErrorMessage(symbol.line, 'i', "è¡¨è¾¾å¼æ•°ç»„ä¸‹æ ‡ä¸ºå­—ç¬¦å‹");
+                }
+                if (!(symbol.type == TYPE_SYM::RBRACK)) {
+                    printPos(6516151);
+                    addErrorMessage(symbol.line, 'm', "å› å­ä¸­æ•°ç»„å…ƒç´ ç¼ºå°‘å³ä¸­æ‹¬å·");
+                }
                 node->addChild(new TerNode(symbol));
                 nextSym();
                 if (symbol.type == TYPE_SYM::LBRACK) {
                     node->addChild(new TerNode(symbol));
                     nextSym();
-                    node->addChild(expressionP());
-                    if (!(symbol.type == TYPE_SYM::RBRACK)) printPos(144444);
+                    node->addChild(expressionP(LAYER)); //TODO
+                    if (node->getLastChild()->isCHARexp()) {
+                        addErrorMessage(symbol.line, 'i', "è¡¨è¾¾å¼æ•°ç»„ä¸‹æ ‡ä¸ºå­—ç¬¦å‹");
+                    }
+                    if (!(symbol.type == TYPE_SYM::RBRACK))  {
+                        printPos(881651);
+                        addErrorMessage(symbol.line, 'm', "å› å­ä¸­äºŒç»´æ•°ç»„å…ƒç´ ç¼ºå°‘å³ä¸­æ‹¬å·");
+                    }
                     node->addChild(new TerNode(symbol));
                     nextSym();
                 }
+            } else {
+                // just var scaler
             }
         }
         else if (cacheContainsSym(TYPE_SYM::LPARENT)) {
             flushPreRead();
-            node->addChild(callFuncSenP());
+            node->addChild(callFuncSenP(LAYER));
         }
     }
     else printPos(99517);
     return node;
 }
 
-inline SynNode* Parser::expressionP() {
+inline SynNode* Parser::expressionP(int layer) {
+    int LAYER = layer;
     NonTerNode* node = new NonTerNode(TYPE_NTS::EXPERSSION, true);
+    node->setCHARexp(false);
+    bool hasOP = false;
     if (symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU) {
+        hasOP = true;
         node->addChild(new TerNode(symbol));
         nextSym();
     }
-    node->addChild(termP());
+    node->addChild(termP(LAYER));
+    if (hasOP && node->getLastChild()->isCHARexp()) {
+        node->setCHARexp(true);
+    }
     while (symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU) {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(termP());
+        node->addChild(termP(LAYER));
+        node->setCHARexp(false);
     }
     return node;
 }
 
-inline SynNode* Parser::sentenceP() {
+inline SynNode* Parser::sentenceP(int layer) {
+    int LAYER = layer;
     NonTerNode* node = new NonTerNode(TYPE_NTS::SENTENCE, true);
     if (symbol.type == TYPE_SYM::WHILETK || symbol.type == TYPE_SYM::FORTK) {
-        node->addChild(loopSenP());
+        node->addChild(loopSenP(LAYER + 1));
     } 
     else if (symbol.type == TYPE_SYM::IFTK) {
-        node->addChild(ifelseSenP());
+        node->addChild(ifelseSenP(LAYER + 1));
     }
     else if (symbol.type == TYPE_SYM::SCANFTK) {
-        node->addChild(readSenP());
+        node->addChild(readSenP(LAYER));
         if (!(symbol.type == TYPE_SYM::SEMICN)) {
             printPos(883833);
         }
@@ -627,7 +669,7 @@ inline SynNode* Parser::sentenceP() {
         nextSym();
     }
     else if (symbol.type == TYPE_SYM::PRINTFTK) {
-        node->addChild(writeSenP());
+        node->addChild(writeSenP(LAYER));
         if (!(symbol.type == TYPE_SYM::SEMICN)) {
             printPos(426621);
         }
@@ -635,10 +677,10 @@ inline SynNode* Parser::sentenceP() {
         nextSym();
     }
     else if (symbol.type == TYPE_SYM::SWITCHTK) {
-        node->addChild(switchSenP());
+        node->addChild(switchSenP(LAYER + 1));
     }
     else if (symbol.type == TYPE_SYM::RETURNTK) {
-        node->addChild(returnSenP());
+        node->addChild(returnSenP(LAYER));
         if (!(symbol.type == TYPE_SYM::SEMICN)) {
             printPos(99578);
         }
@@ -653,11 +695,11 @@ inline SynNode* Parser::sentenceP() {
         preReadSym(1);
         if (cacheContainsSym(TYPE_SYM::LPARENT)) {
             flushPreRead();
-            node->addChild(callFuncSenP());
+            node->addChild(callFuncSenP(LAYER));
         }
         else {
             flushPreRead();
-            node->addChild(assignSenP());
+            node->addChild(assignSenP(LAYER));
         }
         if (!(symbol.type == TYPE_SYM::SEMICN)) printPos(88174);
         node->addChild(new TerNode(symbol));
@@ -666,7 +708,7 @@ inline SynNode* Parser::sentenceP() {
     else if (symbol.type == TYPE_SYM::LBRACE) {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceListP());
+        node->addChild(sentenceListP(LAYER + 1));
         if (!(symbol.type == TYPE_SYM::RBRACE)) printPos(737892);
         node->addChild(new TerNode(symbol));
         nextSym();
@@ -675,7 +717,7 @@ inline SynNode* Parser::sentenceP() {
     return node;
 }
 
-inline SynNode* Parser::callFuncSenP() {
+inline SynNode* Parser::callFuncSenP(int layer) {
     string name;
     SynNode* iden = idenP(&name);
     NonTerNode* node = nullptr;
@@ -699,20 +741,29 @@ inline SynNode* Parser::callFuncSenP() {
     return node;
 }
 
-SynNode* Parser::refuncDefineP() {
+SynNode* Parser::refuncDefineP(int layer) {
+    int LAYER = layer, TYPE, CATE = CAT_FUNC, LINE = -1, ARGNUM=0;
+    string NAME;
     NonTerNode* node = new NonTerNode(TYPE_NTS::REFUNC_DEF, true);
-    string name;
-    node->addChild(decHeadP(&name));
+    node->addChild(decHeadP(&NAME, &LINE));
+    if (checkDuplicate(NAME, LAYER)) {
+        addErrorMessage(LINE, 'b', "æœ‰è¿”å›å€¼å‡½æ•°åå­—é‡å¤å®šä¹‰");
+    }
+    TYPE = node->getLastChild()->getIDENtype();
     if (symbol.type == TYPE_SYM::LPARENT) {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(arguListP());
-        if (!(symbol.type == TYPE_SYM::RPARENT)) printPos(123456);
+        node->addChild(arguListP(LAYER, &ARGNUM));
+        if (!(symbol.type == TYPE_SYM::RPARENT)) {
+            printPos(123456);
+            addErrorMessage(symbol.line, 'l', "nonvoidå‡½æ•°å®šä¹‰ç¼ºå°‘å³æ‹¬å·");
+        }
         node->addChild(new TerNode(symbol));
         nextSym();
     }
     else printPos(22009);
-    this->returnFuncList.insert(name);
+    symbolTable.insertSymbol(NAME, CATE, TYPE, LAYER, false, ARGNUM);
+    //this->returnFuncList.insert(name);
     if (symbol.type == TYPE_SYM::LBRACE) {
         node->addChild(new TerNode(symbol));
         nextSym();
@@ -725,23 +776,31 @@ SynNode* Parser::refuncDefineP() {
     return node;
 }
 
-SynNode* Parser::nonrefuncDefineP() {
+SynNode* Parser::nonrefuncDefineP(int layer) {
+    int LAYER = layer, TYPE = TYPE_VOID, CATE = CAT_FUNC, LINE = -1, ARGNUM=0;
+    string NAME;
     NonTerNode* node = new NonTerNode(TYPE_NTS::NONREFUNC_DEF, true);
-    string name;
     if (symbol.type == TYPE_SYM::VOIDTK) {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(idenP(&name));
+        node->addChild(idenP(&NAME));
+        if (checkDuplicate(NAME, LAYER)) {
+            addErrorMessage(LINE, 'b', "æœ‰è¿”å›å€¼å‡½æ•°åå­—é‡å¤å®šä¹‰");
+        }
         if (symbol.type == TYPE_SYM::LPARENT) {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(arguListP());
-            if (!(symbol.type == TYPE_SYM::RPARENT)) printPos(8085);
+            node->addChild(arguListP(LAYER, &ARGNUM));
+            if (!(symbol.type == TYPE_SYM::RPARENT)) {
+                printPos(8085);
+                addErrorMessage(symbol.line, 'l', "voidå‡½æ•°å®šä¹‰ç¼ºå°‘å³æ‹¬å·");
+            }
             node->addChild(new TerNode(symbol));
             nextSym();
         }
         else printPos(8633);
-        this->nonreturnFuncList.insert(name);
+        symbolTable.insertSymbol(NAME, CATE, TYPE, LAYER, false, ARGNUM);
+        //this->nonreturnFuncList.insert(name);
         if (symbol.type == TYPE_SYM::LBRACE) {
             node->addChild(new TerNode(symbol));
             nextSym();
@@ -756,7 +815,8 @@ SynNode* Parser::nonrefuncDefineP() {
     return node;
 }
 
-inline SynNode* Parser::valueArgueListP() {
+inline SynNode* Parser::valueArgueListP(int layer, int argunum) {
+    int LAYER = layer, ARGUNUM = argunum, n = 0, TEM_TYPE;
     NonTerNode* node = new NonTerNode(TYPE_NTS::VALUE_ARGLIST, true);
     if (symbol.type == TYPE_SYM::PLUS ||
         symbol.type == TYPE_SYM::MINU ||
@@ -765,12 +825,19 @@ inline SynNode* Parser::valueArgueListP() {
         symbol.type == TYPE_SYM::LBRACK||
         symbol.type == TYPE_SYM::INTCON||
         symbol.type == TYPE_SYM::CHARCON) {
-        node->addChild(expressionP());
+        node->addChild(expressionP(LAYER));
+        TEM_TYPE = node->getLastChild()->getIDENtype();
+        
+        n++;
         while (symbol.type == TYPE_SYM::COMMA) {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(expressionP());
+            node->addChild(expressionP(LAYER));
+            n++;
         }
+    }
+    if (argunum != n) {
+        addErrorMessage(symbol.line, 'd', "å‡½æ•°è°ƒç”¨ä¸ªæ•°ä¸åŒ¹é…");
     }
     return node;
 }
@@ -966,7 +1033,7 @@ inline SynNode* Parser::defaultP() {
     }
     else {
         printPos(2227222);
-        addErrorMessage(symbol.line, 'p', "Ã»ÓĞdefaultÓï¾ä");
+        addErrorMessage(symbol.line, 'p', "Ã»ï¿½ï¿½defaultï¿½ï¿½ï¿½");
     }
     return node;
 }

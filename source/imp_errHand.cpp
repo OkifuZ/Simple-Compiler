@@ -76,3 +76,14 @@ bool SymbolTable::duplicateName(string name, int layer) {
 	}
 	return false;
 }
+
+int SymbolTable::idenTYPE(string name, int layer) {
+	for (int i = symTable.size() - 1; i >= 0; i--) {
+		string s = symTable[i].name;
+		int la = symTable[i].layer;
+		if (layer >= la && strSame(s, name)) {
+			return symTable[i].type;
+		}
+	}
+	return -2;
+}
