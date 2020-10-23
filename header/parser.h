@@ -61,8 +61,8 @@ public:
     SynNode* callFuncSenP(int layer);
     SynNode* valueArgueListP(int layer, FuncSymEntry* func);
     SynNode* assignSenP(int layer);
-    SynNode* sentenceP(int layer);
-    SynNode* sentenceListP(int layer);
+    SynNode* sentenceP(int layer, int type = TYPE_VOID);
+    SynNode* sentenceListP(int layer, int type = TYPE_VOID);
     SynNode* ifelseSenP(int layer);
     SynNode* conditionP(int layer);
     SynNode* loopSenP(int layer);
@@ -73,9 +73,9 @@ public:
     SynNode* defaultP(int layer);
     SynNode* readSenP();
     SynNode* writeSenP(int layer);
-    SynNode* returnSenP(int layer);
+    SynNode* returnSenP(int layer, int type = TYPE_VOID);
     SynNode* compareOpP();
-    SynNode* compoundSenP(int layer);
+    SynNode* compoundSenP(int layer, int type = TYPE_VOID);
     SynNode* refuncDefineP(int layer);
     SynNode* nonrefuncDefineP(int layer);
     SynNode* mainP(int layer=0);
