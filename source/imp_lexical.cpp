@@ -2,8 +2,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include "lexical.h"
-#include "parser.h"
+#include "../header/lexical.h"
+#include "../header/parser.h"
 
 using namespace std;
 

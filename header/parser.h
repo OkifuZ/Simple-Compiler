@@ -45,36 +45,36 @@ public:
     SynNode* constDecP(int layer); //*
     SynNode* idenP(std::string* S = nullptr, int *line = nullptr);
     SynNode* decHeadP(std::string*, int* line = nullptr);
-    SynNode* constP();
+    SynNode* constP(int* line = nullptr);
     SynNode* varDecP(int layer);
     SynNode* varDefP(int layer);
     SynNode* varDerWithInitP(int layer, int type);
     SynNode* varDerWithoutInitP(int layer, int type);
     SynNode* typeIdenP();
-    SynNode* arrayConstP(int size); // {}
-    SynNode* doubleArrayConstP(int size1, int size2); // {{}}
+    SynNode* arrayConstP(int size, int* type); // {}
+    SynNode* doubleArrayConstP(int size1, int size2, int* type); // {{}}
     SynNode* oneDdeclareP(int* size); // [x]
-    SynNode* arguListP(int layer, int*num=nullptr);
+    SynNode* arguListP(int layer, int*num, FuncSymEntry* func);
     SynNode* termP(int layer);
     SynNode* factorP(int layer);
     SynNode* expressionP(int layer);
     SynNode* callFuncSenP(int layer);
-    SynNode* valueArgueListP(int layer, int argunum);
+    SynNode* valueArgueListP(int layer, FuncSymEntry* func);
     SynNode* assignSenP(int layer);
     SynNode* sentenceP(int layer);
     SynNode* sentenceListP(int layer);
     SynNode* ifelseSenP(int layer);
     SynNode* conditionP(int layer);
     SynNode* loopSenP(int layer);
-    SynNode* stepLengthP(int layer);
+    SynNode* stepLengthP();
     SynNode* switchSenP(int layer);
-    SynNode* caseListP(int layer);
-    SynNode* caseSenP(int layer);
+    SynNode* caseListP(int layer, int type);
+    SynNode* caseSenP(int layer, int type);
     SynNode* defaultP(int layer);
-    SynNode* readSenP(int layer);
+    SynNode* readSenP();
     SynNode* writeSenP(int layer);
     SynNode* returnSenP(int layer);
-    SynNode* compareOpP(int layer);
+    SynNode* compareOpP();
     SynNode* compoundSenP(int layer);
     SynNode* refuncDefineP(int layer);
     SynNode* nonrefuncDefineP(int layer);
@@ -86,6 +86,17 @@ public:
 
     bool checkDuplicate(std::string name, int layer) {
         return symbolTable.duplicateName(name, layer);
+    }
+
+    FuncSymEntry* getFUNC_CALL(std::string name) {
+        SymTableEntry* sym = symbolTable.getSymByName(name);
+        FuncSymEntry* func = dynamic_cast<FuncSymEntry*>(sym);
+        return func;
+    }
+
+    SymTableEntry* getEntryByName(std::string name) {
+        SymTableEntry* sym = symbolTable.getSymByName(name);
+        return sym;
     }
 
     bool getIDENtype(std::string name, int *type, int layer) {

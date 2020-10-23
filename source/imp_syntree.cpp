@@ -2,9 +2,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include "lexical.h"
-#include "parser.h"
-#include "synTree.h"
+#include "../header/lexical.h"
+#include "../header/parser.h"
+#include "../header/synTree.h"
 
 using namespace std;
 

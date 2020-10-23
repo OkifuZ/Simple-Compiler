@@ -15,79 +15,118 @@
 #define TYPE_CHAR 1
 
 
-enum class TYPE_SYM_CLASS {
-	INVALID = -1, 
-	VAR_INT = 0, VAR_CHAR, 
-	INT_ARR_DIM1, INT_ARR_DIM2, 
-	CHAR_ARR_DIM1, CHAR_ARR_DIM2,
-	CON_INT, CON_CHAR,
-	INT_FUNC, CHAR_FUNC, VOID_FUNC,
-	PARA_INT, PARA_CHAR
-};
+//enum class TYPE_SYM_CLASS {
+//	INVALID = -1, 
+//	VAR_INT = 0, VAR_CHAR, 
+//	INT_ARR_DIM1, INT_ARR_DIM2, 
+//	CHAR_ARR_DIM1, CHAR_ARR_DIM2,
+//	CON_INT, CON_CHAR,
+//	INT_FUNC, CHAR_FUNC, VOID_FUNC,
+//	PARA_INT, PARA_CHAR
+//};
 
 class SymTableEntry {
 public:
+	SymTableEntry(std::string name_, int cate, int type_, int layer_):
+		category(cate), name(name_), type(type_), layer(layer_) {}
+
+	virtual ~SymTableEntry() = default;
+
+	virtual std::string getName() { return name; }
+	virtual int getCATE() { return category; }
+	virtual int getTYPE() { return type; }
+	virtual int getLAYER() { return layer; }
+	virtual int getINDEX() { return INDEX_TABLE; }
+	virtual void setINDEX(int i) { INDEX_TABLE = i; }
+
+protected:
 	int category = 0;
 	// 0 -> var, 1 -> const, 2 -> func
-	int type = 0; 
+	int type = 0;
 	// -1 -> void, 0 -> int, 1 -> char, also records the return type of a function
-	int dim = 0;
-	// scaler or func -> 0, type[] -> 1, type[][] -> 2
 	int layer = -1;
 	// -1 -> invalid, the outest layer is denoted as 0
 	std::string name;
-
-	bool isFormalPar = false;
-	//int parFuncPos = -1;
-	int arguNum = -1;
-	int firstDimSize = -1;
-	int secDimSize = -1;
-	// if is formal parameter, funcPos >= 0
-	//int arrayPos = -1;
-	// if is array(dim >= 1), arrayPos >= 0
-	//int funcPos = -1;
-	//// if is function, funcPos >= 0
-
-	SymTableEntry(std::string name, int cate, int type_, int layer_, int dim_=0, int size1=-1, int size2=-1) :
-		category(cate), type(type_), layer(layer_), dim(dim_), firstDimSize(size1), secDimSize(size2) {}
-	
-	SymTableEntry(std::string name, int cate, int type_, int layer_, bool isFormal, int argunum/*, int parFuncPos_*/) :
-		category(cate), type(type_), layer(layer_), isFormalPar(isFormal), arguNum(argunum)/*, parFuncPos(parFuncPos_)*/ {}
-
-
-
-	TYPE_SYM_CLASS getClass();
+	int INDEX_TABLE = -1;
 
 };
 
 
-//class ArrayTableEntry{
-//public:
-//	int firstDimSize = -1;
-//	int secDimSize = -1;
-//};
+class ArraySymEntry : public SymTableEntry {
+public:
+	ArraySymEntry(std::string name, int cate, int type, int layer, int size):
+		SymTableEntry(name, cate, type, layer), 
+		dim(1), firstDimSize(size), secDimSize(-1) {}
+	ArraySymEntry(std::string name, int cate, int type, int layer, int size1, int size2) :
+		SymTableEntry(name, cate, type, layer),
+		dim(2), firstDimSize(size1), secDimSize(size2) {}
+
+	int getDim() { return dim; }
+	int getFIRST_SIZE() { return firstDimSize; }
+	int getSECOND_SIZE() { return secDimSize; }
+
+private:
+	int dim = 0;
+	int firstDimSize = -1;
+	int secDimSize = -1;
+};
+
+class ScalerSymEntry : public SymTableEntry {
+public:
+	ScalerSymEntry(std::string name, int cate, int type, int layer):
+		SymTableEntry(name, cate, type, layer) {}
+
+};
+
+class FormalVarSymEntry : public ScalerSymEntry {
+public:
+	FormalVarSymEntry(std::string name, int cate, int type, int layer, int parFuncPos_):
+		ScalerSymEntry(name, cate, type, layer), parFuncPos(parFuncPos_) {}
+
+	int getPAR_FUNC_POS() { return parFuncPos; }
+
+	void setPAR_FUNC_POS(int pos) { parFuncPos = pos; }
+
+private:
+	int parFuncPos = -1;
+};
+
+class FuncSymEntry : public SymTableEntry {
+public:
+	FuncSymEntry(std::string name, int cate, int type, int layer, int argnum) :
+		SymTableEntry(name, cate, type, layer), argNum(argnum) {}
+
+	int getARGNUM() { return argNum; }
+
+	void addParaType(int type) { paraTypeList.push_back(type); }
+	std::vector<int>& getParaTypeList() { return paraTypeList; }
+
+	void setARGNUM(int n) { argNum = n; }
+
+private:
+	int argNum = -1;
+	std::vector<int> paraTypeList;
+
+};
 
 
 class SymbolTable {
 private:
-	std::vector<SymTableEntry> symTable;
-	//std::vector<ArrayTableEntry> arrayTable;
+	std::vector<SymTableEntry*> symTable;
 	
 public:
 	SymbolTable() {}
 
-	void insertSymbol(std::string name, int cate, int type, int layer, int dim=0, int size1=-1, int size2=-1) {
-		symTable.push_back(SymTableEntry(name, cate, type, layer, dim, size1, size2));
-	}
-	void insertSymbol(std::string name, int cate, int type, int layer, bool isFormal, int argunum=-1/*, int funcPos*/) {
-		symTable.push_back(SymTableEntry(name, cate, type, layer, isFormal, argunum/*, funcPos*/));
+	void insertSymbolEntry(SymTableEntry* sym) {
+		symTable.push_back(sym);
+		sym->setINDEX(symTable.size() - 1); // set index(pos) of sym
 	}
 
 	void popSymbol() {
 		symTable.pop_back();
 	}
 
-	SymTableEntry topSymbol() {
+	SymTableEntry* topSymbol() {
 		return symTable.back();
 	}
 
@@ -95,6 +134,7 @@ public:
 
 	int idenTYPE(std::string name, int layer);
 
+	SymTableEntry* getSymByName(std::string name);
 
 };
 
