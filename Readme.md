@@ -2,6 +2,6 @@
 
 ---
 
-A course design project of ***Principles of Compiling*** (BUAA)
+A course design project of ***Principles of Compiling*** 
 
 developed in the winter of 2020
