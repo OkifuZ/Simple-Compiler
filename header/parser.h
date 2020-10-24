@@ -37,22 +37,22 @@ public:
     void flushPreRead();
     bool cacheContainsSym(TYPE_SYM type);
 
-    SynNode* stringP();
-    SynNode* unsignedIntP();
-    SynNode* intP();
-    SynNode* charP();
+    SynNode* stringP(std::string*);
+    SynNode* unsignedIntP(int*);
+    SynNode* intP(int*);
+    SynNode* charP(char*);
     SynNode* constDefP(int layer); //*
     SynNode* constDecP(int layer); //*
-    SynNode* idenP(std::string* S = nullptr, int *line = nullptr);
-    SynNode* decHeadP(std::string*, int* line = nullptr);
-    SynNode* constP(int* line = nullptr);
+    SynNode* idenP(std::string*, int *);
+    SynNode* decHeadP(std::string*, int*, int*);
+    SynNode* constP(int*, int*, int*);
     SynNode* varDecP(int layer);
     SynNode* varDefP(int layer);
     SynNode* varDerWithInitP(int layer, int type);
     SynNode* varDerWithoutInitP(int layer, int type);
-    SynNode* typeIdenP();
-    SynNode* arrayConstP(int size, int* type); // {}
-    SynNode* doubleArrayConstP(int size1, int size2, int* type); // {{}}
+    SynNode* typeIdenP(int*);
+    SynNode* arrayConstP(int, int*, int*); // {}
+    SynNode* doubleArrayConstP(int, int, int*, int*); // {{}}
     SynNode* oneDdeclareP(int* size); // [x]
     SynNode* arguListP(int layer, int*num, FuncSymEntry* func);
     SynNode* termP(int layer);

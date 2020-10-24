@@ -34,27 +34,13 @@ extern const std::string get_STRING_NTS(TYPE_NTS type);
 
 class SynNode {
 public:
-	SynNode(std::string name_, int iv=0, char cv='\0') : 
-		name(name_), INT_value(iv), CHAR_value(cv) {}
-	
+
+	SynNode(std::string name_) : 
+		name(name_) {}
+
 	virtual void print(std::ostream&) = 0;
 	virtual std::string getName() const { return name; }
 	virtual ~SynNode() = default;
-	
-	virtual int getINTvalue() { return INT_value; }
-	virtual char getCHARvalue() { return CHAR_value; }
-	virtual int getIDENtype() { return IDEN_TYPE; }
-	virtual bool isCHARexp() { return CHAR_CON == 1; }
-	virtual bool isCHARconst() { return CHAR_CON == 1; }
-	virtual void setCHARexp(bool isChar) { 
-		if (isChar) CHAR_CON = 1;
-		else CHAR_CON = 0;
-	}
-	int INT_value = 0;
-	char CHAR_value = '\0';
-	int IDEN_TYPE = TYPE_VOID;
-	int CHAR_CON = -1;
-	
 
 protected:
 	std::string name;

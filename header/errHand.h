@@ -5,14 +5,14 @@
 #include <vector>
 
 
-#define CAT_VAR 0
-#define CAT_CONST 1
-#define CAT_FUNC 2
+#define _CAT_VAR 0
+#define _CAT_CONST 1
+#define _CAT_FUNC 2
 
-#define TYPE_ERROR -2
-#define TYPE_VOID -1
-#define TYPE_INT 0
-#define TYPE_CHAR 1
+#define _TYPE_ERROR -2
+#define _TYPE_VOID -1
+#define _TYPE_INT 0
+#define _TYPE_CHAR 1
 
 
 //enum class TYPE_SYM_CLASS {
