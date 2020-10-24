@@ -74,12 +74,13 @@ public:
     SynNode* caseListP(int layer, int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
     SynNode* caseSenP(int layer, int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
     SynNode* defaultP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* readSenP();
+    SynNode* readSenP(int layer);
     SynNode* writeSenP(int layer);
-    SynNode* returnSenP(int layer, int type = _TYPE_VOID);
+    SynNode* returnSenP(int, int, int*);
     SynNode* compareOpP(int*);
     SynNode* compoundSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* mainP(int layer=0);
+    void semicnP(NonTerNode*);
+    SynNode* mainP(int layer);
 
     void addErrorMessage(int line, char iden, std::string mess="") {
         errorList.push_back(ErrorMessage(line, iden, mess));
@@ -100,6 +101,10 @@ public:
         return sym;
     }
 
+    void popSym_CurLayer(int layer) {
+        symbolTable.popSym(layer);
+    }
+
     void printError(std::ostream& out);
 
     int str2int(std::string s) {
@@ -117,6 +122,8 @@ public:
         if (s.size() > 1) printPos(8069);
         return s[0];
     }
+
+    
 
 private:
     bool flushed = true;

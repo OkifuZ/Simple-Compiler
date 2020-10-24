@@ -49,8 +49,8 @@ protected:
 
 class TerNode : public SynNode {
 public:
-	TerNode(LexSymbol sym_, int iv = 0, char cv = '\0') :
-		SynNode(sym_.token, iv, cv), symbol(sym_) {}
+	TerNode(LexSymbol sym_) :
+		SynNode(sym_.token), symbol(sym_) {}
 	
 	void print(std::ostream&) override;
 
@@ -64,8 +64,8 @@ private:
 
 class NonTerNode : public SynNode {
 public:
-	NonTerNode(TYPE_NTS type_, bool high_, int iv = 0, char cv = '\0') :
-		SynNode(get_STRING_NTS(type_), iv, cv), type(type_), highlighted(high_) {}
+	NonTerNode(TYPE_NTS type_, bool high_) :
+		SynNode(get_STRING_NTS(type_)), type(type_), highlighted(high_) {}
 	
 	void print(std::ostream&) override;
 	void addChild(SynNode* s) { children.push_back(s); }

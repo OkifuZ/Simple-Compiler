@@ -93,7 +93,7 @@ private:
 
 class FuncSymEntry : public SymTableEntry {
 public:
-	FuncSymEntry(std::string name, int cate, int type, int layer, int argnum) :
+	FuncSymEntry(std::string name, int cate, int type, int layer, int argnum=0) :
 		SymTableEntry(name, cate, type, layer), argNum(argnum) {}
 
 	int getARGNUM() { return argNum; }
@@ -132,9 +132,11 @@ public:
 
 	bool duplicateName(std::string name, int layer);
 
-	int idenTYPE(std::string name, int layer);
+	int getTypeByName(std::string name, int layer);
 
 	SymTableEntry* getSymByName(std::string name);
+
+	void popSym(int layer);
 
 };
 
