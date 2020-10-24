@@ -51,5 +51,5 @@ int SymbolTable::idenTYPE(string name, int layer) {
 			return symTable[i]->getTYPE();
 		}
 	}
-	return -2;
+	return _TYPE_ERROR;
 }

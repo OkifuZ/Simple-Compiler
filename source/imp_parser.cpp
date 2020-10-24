@@ -694,36 +694,39 @@ inline SynNode *Parser::typeIdenP(int* attr_intType_syn)
     return node;
 }
 
-inline SynNode *Parser::termP(int layer)
+inline SynNode *Parser::termP(int layer, int* attr_intType_syn, int* attr_value_syn)
 {
-    int LAYER = layer;
+    int LAYER = layer, attr_type_tem, attr_value_tem, attr_value_ans = 1;
+    *attr_intType_syn = _TYPE_CHAR; // set type default as char
     NonTerNode *node = new NonTerNode(TYPE_NTS::TERM, true);
-    node->setCHARexp(false);
-    node->addChild(factorP(LAYER));
-    if (node->getLastChild()->isCHARexp())
+    node->addChild(factorP(LAYER, &attr_type_tem, &attr_value_tem));
+    attr_value_ans *= attr_value_tem;
+    if (attr_type_tem == _TYPE_INT)
     {
-        node->setCHARexp(true);
+        *attr_intType_syn = _TYPE_INT;
     }
     while (symbol.type == TYPE_SYM::MULT || symbol.type == TYPE_SYM::DIV)
     {
+        *attr_intType_syn = _TYPE_INT;
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(factorP(LAYER));
-        node->setCHARexp(false); // more than one factor, not a char type term
+        node->addChild(factorP(LAYER, &attr_type_tem, &attr_value_tem));
+        attr_value_ans = (symbol.type == TYPE_SYM::MULT ? 
+            attr_value_ans * attr_value_tem : attr_value_ans / attr_type_tem);
     }
+    *attr_value_syn = attr_value_ans;
     return node;
 }
 
-inline SynNode *Parser::factorP(int layer)
+inline SynNode *Parser::factorP(int layer, int* attr_intType_syn, int* attr_value_syn)
 {
     int LAYER = layer;
     NonTerNode *node = new NonTerNode(TYPE_NTS::FACTOR, true);
-    node->setCHARexp(false);
     if (symbol.type == TYPE_SYM::LPARENT)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(expressionP(LAYER));
+        node->addChild(expressionP(LAYER, attr_intType_syn, attr_value_syn));
         if (!(symbol.type == TYPE_SYM::RPARENT))
         {
             printPos(914151);
@@ -734,75 +737,30 @@ inline SynNode *Parser::factorP(int layer)
     }
     else if (symbol.type == TYPE_SYM::CHARCON)
     {
-        node->addChild(new TerNode(symbol));
-        node->setCHARexp(true);
+        char attr_char_syn;
+        node->addChild(charP(&attr_char_syn));
+        *attr_value_syn = static_cast<int>(attr_char_syn);
+        *attr_intType_syn = _TYPE_CHAR;
         nextSym();
     }
     else if (symbol.type == TYPE_SYM::PLUS ||
              symbol.type == TYPE_SYM::MINU || symbol.type == TYPE_SYM::INTCON)
     {
-        node->addChild(intP());
+        *attr_intType_syn = _TYPE_INT;
+        node->addChild(intP(attr_value_syn));
     }
     else if (symbol.type == TYPE_SYM::IDENFR)
     {
-        int TYPE;
-        string NAME = symbol.token;
-        if (getIDENtype(NAME, &TYPE, LAYER))
-        {
-            addErrorMessage(symbol.line, 'c', "因子中引用了未定义的名字");
-        }
-        if (TYPE == TYPE_CHAR)
-        {
-            node->setCHARexp(true);
-        }
         preReadSym(1);
         if (!cacheContainsSym(TYPE_SYM::LPARENT))
         {
             flushPreRead();
-            node->addChild(idenP());
-            if (symbol.type == TYPE_SYM::LBRACK)
-            {
-                node->addChild(new TerNode(symbol));
-                nextSym();
-                node->addChild(expressionP(LAYER)); // TODO
-                if (node->getLastChild()->isCHARexp())
-                {
-                    addErrorMessage(symbol.line, 'i', "表达式数组下标为字符型");
-                }
-                if (!(symbol.type == TYPE_SYM::RBRACK))
-                {
-                    printPos(6516151);
-                    addErrorMessage(symbol.line, 'm', "因子中数组元素缺少右中括号");
-                }
-                node->addChild(new TerNode(symbol));
-                nextSym();
-                if (symbol.type == TYPE_SYM::LBRACK)
-                {
-                    node->addChild(new TerNode(symbol));
-                    nextSym();
-                    node->addChild(expressionP(LAYER)); //TODO
-                    if (node->getLastChild()->isCHARexp())
-                    {
-                        addErrorMessage(symbol.line, 'i', "表达式数组下标为字符型");
-                    }
-                    if (!(symbol.type == TYPE_SYM::RBRACK))
-                    {
-                        printPos(881651);
-                        addErrorMessage(symbol.line, 'm', "因子中二维数组元素缺少右中括号");
-                    }
-                    node->addChild(new TerNode(symbol));
-                    nextSym();
-                }
-            }
-            else
-            {
-                // just var scaler
-            }
+            node->addChild(referenceP(LAYER, attr_intType_syn, attr_value_syn, false, 0));
         }
         else if (cacheContainsSym(TYPE_SYM::LPARENT))
         {
             flushPreRead();
-            node->addChild(callFuncSenP(LAYER));
+            node->addChild(callFuncSenP(LAYER, attr_intType_syn, attr_value_syn));
         }
     }
     else
@@ -810,31 +768,93 @@ inline SynNode *Parser::factorP(int layer)
     return node;
 }
 
-inline SynNode *Parser::expressionP(int layer)
+inline SynNode *Parser::expressionP(int layer, int* attr_intType_syn, int* attr_value_syn)
 {
-    int LAYER = layer;
+    int LAYER = layer, attr_type_tem, attr_value_tem, attr_value_ans = 0;
+    *attr_intType_syn = _TYPE_CHAR;
     NonTerNode *node = new NonTerNode(TYPE_NTS::EXPERSSION, true);
-    node->setCHARexp(false);
-    bool hasOP = false;
     if (symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU)
     {
-        hasOP = true;
+        *attr_intType_syn = _TYPE_INT;
         node->addChild(new TerNode(symbol));
         nextSym();
     }
-    node->addChild(termP(LAYER));
-    if (hasOP && node->getLastChild()->isCHARexp())
-    {
-        node->setCHARexp(true);
+    node->addChild(termP(LAYER, &attr_type_tem, &attr_value_tem));
+    attr_value_ans += attr_value_tem;
+    if (attr_type_tem == _TYPE_INT) {
+        *attr_intType_syn = _TYPE_INT;
     }
     while (symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU)
     {
+        *attr_intType_syn = _TYPE_INT;
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(termP(LAYER));
-        node->setCHARexp(false);
+        node->addChild(termP(LAYER, &attr_type_tem, &attr_value_tem));
+        attr_value_ans = (symbol.type == TYPE_SYM::PLUS ? 
+            attr_value_ans + attr_value_tem : attr_value_ans - attr_type_tem);
     }
+    *attr_value_syn = attr_value_ans;
     return node;
+}
+
+SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_syn, bool isAssign, int attr_assignVal_inh=0) {
+    string attr_strName_syn;
+    int attr_intLine_syn, LAYER = layer;
+    NonTerNode* node = new NonTerNode(TYPE_NTS::REFERENCE, false);
+    node->addChild(idenP(&attr_strName_syn, &attr_intLine_syn));
+    SymTableEntry* attr_sym = getEntryByName(attr_strName_syn);
+    if (attr_sym == nullptr) {
+        addErrorMessage(symbol.line, 'c', "引用了未定义的名字");
+    }
+    else if (isAssign && attr_sym->getCATE() == _CAT_CONST) {
+        addErrorMessage(symbol.line, 'j', "改变常量的值");
+    } 
+    else {
+        *attr_intType_syn = attr_sym->getTYPE();
+        if (symbol.type == TYPE_SYM::LBRACK)
+        {
+            node->addChild(new TerNode(symbol));
+            int attr_subValue_syn, attr_subType_syn;
+            nextSym();
+            node->addChild(expressionP(LAYER, &attr_subType_syn, &attr_subValue_syn)); 
+            if (attr_subType_syn == _TYPE_CHAR)
+            {
+                addErrorMessage(symbol.line, 'i', "数组下标为字符型");
+            }
+            if (!(symbol.type == TYPE_SYM::RBRACK))
+            {
+                printPos(6516151);
+                addErrorMessage(symbol.line, 'm', "数组元素缺少右中括号");
+            }
+            node->addChild(new TerNode(symbol));
+            nextSym();
+            if (symbol.type == TYPE_SYM::LBRACK)
+            {
+                node->addChild(new TerNode(symbol));
+                int attr_subValue_syn, attr_subType_syn;
+                nextSym();
+                node->addChild(expressionP(LAYER, &attr_subType_syn, &attr_subValue_syn)); 
+                if (attr_subType_syn == _TYPE_CHAR)
+                {
+                    addErrorMessage(symbol.line, 'i', "数组下标为字符型");
+                }
+                if (!(symbol.type == TYPE_SYM::RBRACK))
+                {
+                    printPos(881651);
+                    addErrorMessage(symbol.line, 'm', "二维数组元素缺少右中括号");
+                }
+                node->addChild(new TerNode(symbol));
+                nextSym();
+            }
+        }
+        else
+        {
+            // just var scaler
+        }
+    }
+    if (attr_value_syn != nullptr) {
+        *attr_value_syn = 0; // so for no access to memory
+    }
 }
 
 inline SynNode *Parser::sentenceP(int layer, int type)
@@ -940,58 +960,59 @@ inline SynNode *Parser::sentenceP(int layer, int type)
     return node;
 }
 
-inline SynNode *Parser::arguListP(int layer, int *num, FuncSymEntry *func)
+inline SynNode *Parser::arguListP(int layer, int *attr_num_syn, FuncSymEntry *func)
 {
     int LAYER = layer;
-    int CATE = _CAT_VAR, TYPE, line = 0, n = 0;
-    string NAME;
+    int attr_cate = _CAT_VAR, attr_line = 0, n = 0;
+    string attr_strName;
     NonTerNode *node = new NonTerNode(TYPE_NTS::ARGLIST, true);
     if (symbol.type == TYPE_SYM::INTTK || symbol.type == TYPE_SYM::CHARTK)
     {
-        node->addChild(typeIdenP());
-        TYPE = node->getLastChild()->getIDENtype();
-        node->addChild(idenP(&NAME));
-        symbolTable.insertSymbolEntry(new FormalVarSymEntry(NAME, CATE, TYPE, LAYER, func->getINDEX()));
-        func->addParaType(TYPE);
+        int attr_type_tem;
+        node->addChild(typeIdenP(&attr_type_tem));
+        node->addChild(idenP(&attr_strName, &attr_line));
+        // 这里应该不用检查重复
+        symbolTable.insertSymbolEntry(
+            new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, LAYER, func->getINDEX()));
+        func->addParaType(attr_type_tem);
         n++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(typeIdenP());
-            TYPE = node->getLastChild()->getIDENtype();
-            node->addChild(idenP(&NAME, &line));
-            if (checkDuplicate(NAME, LAYER))
+            node->addChild(typeIdenP(&attr_type_tem));
+            node->addChild(idenP(&attr_strName, &attr_line));
+            if (checkDuplicate(attr_strName, LAYER)) 
             {
-                addErrorMessage(line, 'b', "参数列表中重复定义名字");
+                addErrorMessage(attr_line, 'b', "参数列表中重复定义名字");
             }
-            symbolTable.insertSymbolEntry(new FormalVarSymEntry(NAME, CATE, TYPE, LAYER, func->getINDEX()));
-            func->addParaType(TYPE);
+            symbolTable.insertSymbolEntry(
+                new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, LAYER, func->getINDEX()));
+            func->addParaType(attr_type_tem);
             n++;
         }
     }
-    *num = n;
+    *attr_num_syn = n;
     return node;
 }
 
 SynNode *Parser::refuncDefineP(int layer)
 {
-    int LAYER = layer, TYPE, CATE = CAT_FUNC, LINE = -1, ARGNUM = 0;
-    string NAME;
+    int LAYER = layer, attr_type, attr_cate = _CAT_FUNC, attr_line = -1, attr_argnum = 0;
+    string attr_strName;
     NonTerNode *node = new NonTerNode(TYPE_NTS::REFUNC_DEF, true);
-    node->addChild(decHeadP(&NAME, &LINE));
-    if (checkDuplicate(NAME, LAYER))
+    node->addChild(decHeadP(&attr_strName, &attr_type, &attr_line));
+    if (checkDuplicate(attr_strName, LAYER))
     {
-        addErrorMessage(LINE, 'b', "有返回值函数名字重复定义");
+        addErrorMessage(attr_line, 'b', "有返回值函数名字重复定义");
     }
-    TYPE = node->getLastChild()->getIDENtype();
-    FuncSymEntry *symFUNC = new FuncSymEntry(NAME, CATE, TYPE, LAYER, -1);
+    FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_cate, attr_type, LAYER, 0);
     symbolTable.insertSymbolEntry(symFUNC);
     if (symbol.type == TYPE_SYM::LPARENT)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(arguListP(LAYER, &ARGNUM, symFUNC));
+        node->addChild(arguListP(LAYER, &attr_argnum, symFUNC));
         if (!(symbol.type == TYPE_SYM::RPARENT))
         {
             printPos(123456);
@@ -1001,45 +1022,50 @@ SynNode *Parser::refuncDefineP(int layer)
         nextSym();
     }
     else
+    {
         printPos(22009);
-    symFUNC->setARGNUM(ARGNUM);
-    //this->returnFuncList.insert(name);
+    }
+    symFUNC->setARGNUM(attr_argnum);
     if (symbol.type == TYPE_SYM::LBRACE)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(compoundSenP(LAYER + 1, TYPE));
+        node->addChild(compoundSenP(LAYER + 1, true, attr_type));
         if (!(symbol.type == TYPE_SYM::RBRACE))
+        {
             printPos(891947);
+        }
         node->addChild(new TerNode(symbol));
         nextSym();
     }
     else
+    {
         printPos(91415);
+    }
     return node;
 }
 
 SynNode *Parser::nonrefuncDefineP(int layer)
 {
-    int LAYER = layer, TYPE = TYPE_VOID, CATE = CAT_FUNC, LINE = -1, ARGNUM = 0;
-    string NAME;
+    int LAYER = layer, attr_type = _TYPE_VOID, attr_cate = _CAT_FUNC, attr_line = -1, attr_argnum = 0;
+    string attr_strName;
     NonTerNode *node = new NonTerNode(TYPE_NTS::NONREFUNC_DEF, true);
     if (symbol.type == TYPE_SYM::VOIDTK)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(idenP(&NAME));
-        if (checkDuplicate(NAME, LAYER))
+        node->addChild(idenP(&attr_strName, &attr_line));
+        if (checkDuplicate(attr_strName, LAYER))
         {
-            addErrorMessage(LINE, 'b', "有返回值函数名字重复定义");
+            addErrorMessage(attr_line, 'b', "有返回值函数名字重复定义");
         }
-        FuncSymEntry *symFUNC = new FuncSymEntry(NAME, CATE, TYPE, LAYER, -1);
+        FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_line, attr_line, LAYER, 0);
         symbolTable.insertSymbolEntry(symFUNC);
         if (symbol.type == TYPE_SYM::LPARENT)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(arguListP(LAYER, &ARGNUM, symFUNC));
+            node->addChild(arguListP(LAYER, &attr_argnum, symFUNC));
             if (!(symbol.type == TYPE_SYM::RPARENT))
             {
                 printPos(8085);
@@ -1049,45 +1075,47 @@ SynNode *Parser::nonrefuncDefineP(int layer)
             nextSym();
         }
         else
+        {
             printPos(8633);
-        symFUNC->setARGNUM(ARGNUM);
-        //this->nonreturnFuncList.insert(name);
+        }
+        symFUNC->setARGNUM(attr_argnum);
         if (symbol.type == TYPE_SYM::LBRACE)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(compoundSenP(LAYER + 1));
+            node->addChild(compoundSenP(LAYER + 1, true, attr_type));
             if (!(symbol.type == TYPE_SYM::RBRACE))
+            {
                 printPos(9976);
+            }
             node->addChild(new TerNode(symbol));
             nextSym();
         }
-        else
+        else{
             printPos(9842);
+        }
     }
     else
+    {
         printPos(7522);
+    }
     return node;
 }
 
-inline SynNode *Parser::callFuncSenP(int layer)
+inline SynNode *Parser::callFuncSenP(int layer, int* attr_intType_syn, int* attr_value_syn)
 {
-    int LAYER = layer, LINE = -1;
-    string NAME;
-    SynNode *iden = idenP(&NAME, &LINE);
+    int LAYER = layer, attr_line = -1;
+    string attr_strName;
+    SynNode *iden = idenP(&attr_strName, &attr_line);
     NonTerNode *node = nullptr;
-    FuncSymEntry *func = getFUNC_CALL(NAME);
+    FuncSymEntry *func = getFUNC_CALL(attr_strName);
     if (func == nullptr)
     {
-        addErrorMessage(LINE, 'c', "函数调用了未定义的名字");
-    }
-    else if (func->getCATE() != CAT_FUNC)
-    {
-        printPos(71313);
+        addErrorMessage(attr_line, 'c', "函数调用了未定义的名字");
     }
     else
     {
-        if (func->getTYPE() == TYPE_VOID)
+        if (func->getTYPE() == _TYPE_VOID)
         {
             node = new NonTerNode(TYPE_NTS::CALL_NONREFUNC_SEN, true);
         }
@@ -1095,31 +1123,32 @@ inline SynNode *Parser::callFuncSenP(int layer)
         {
             node = new NonTerNode(TYPE_NTS::CALL_REFUNC_SEN, true);
         }
-    }
-    node->addChild(iden);
-    if (symbol.type == TYPE_SYM::LPARENT)
-    {
-        node->addChild(new TerNode(symbol));
-        nextSym();
-        node->addChild(valueArgueListP(LAYER, func));
-        if (!(symbol.type == TYPE_SYM::RPARENT))
+        node->addChild(iden);
+        if (symbol.type == TYPE_SYM::LPARENT)
         {
-            printPos(99875);
-            addErrorMessage(symbol.line, 'l', "函数调用缺少右括号");
+            node->addChild(new TerNode(symbol));
+            nextSym();
+            node->addChild(valueArgueListP(LAYER, func));
+            if (!(symbol.type == TYPE_SYM::RPARENT))
+            {
+                printPos(99875);
+                addErrorMessage(symbol.line, 'l', "函数调用缺少右括号");
+            }
+            node->addChild(new TerNode(symbol));
+            nextSym();
         }
-        node->addChild(new TerNode(symbol));
-        nextSym();
+        else {
+            printPos(88278);
+        }
     }
-    else
-        printPos(88278);
+    *attr_value_syn = 0; // so far no compute enabled
     return node;
 }
 
 inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
 {
-    int LAYER = layer, ARGUNUM = func->getARGNUM(), n = 0, TEM_TYPE, LINE = -1;
+    int LAYER = layer, attr_argnum = func->getARGNUM(), n = 0, attr_type_tem, attr_intLine = -1, attr_value_tem;
     NonTerNode *node = new NonTerNode(TYPE_NTS::VALUE_ARGLIST, true);
-    int i_para = 0;
     if (symbol.type == TYPE_SYM::PLUS ||
         symbol.type == TYPE_SYM::MINU ||
         symbol.type == TYPE_SYM::IDENFR ||
@@ -1128,23 +1157,28 @@ inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
         symbol.type == TYPE_SYM::INTCON ||
         symbol.type == TYPE_SYM::CHARCON)
     {
-        node->addChild(expressionP(LAYER));
-        TEM_TYPE = node->getLastChild()->getIDENtype();
-        if (TEM_TYPE != func->getParaTypeList()[i_para])
+        node->addChild(expressionP(LAYER, &attr_type_tem, &attr_value_tem));
+        if (func->getParaTypeList().empty() || n >= func->getARGNUM())
         {
-            addErrorMessage(symbol.line, 'e', "函数调用参数个数不匹配");
+            addErrorMessage(symbol.line, 'd', "函数调用参数个数不匹配");
+        }
+        else if (attr_type_tem != func->getParaTypeList()[n])
+        {
+            addErrorMessage(symbol.line, 'e', "函数调用参数类型不匹配");
         }
         n++;
-        i_para++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(expressionP(LAYER));
-            TEM_TYPE = node->getLastChild()->getIDENtype();
-            if (TEM_TYPE != func->getParaTypeList()[i_para])
+            node->addChild(expressionP(LAYER, &attr_type_tem, &attr_value_tem));
+            if (func->getParaTypeList().empty() || n >= func->getARGNUM())
             {
-                addErrorMessage(symbol.line, 'e', "函数调用参数个数不匹配");
+                addErrorMessage(symbol.line, 'd', "函数调用参数个数不匹配");
+            }
+            else if (attr_type_tem != func->getParaTypeList()[n])
+            {
+                addErrorMessage(symbol.line, 'e', "函数调用参数类型不匹配");
             }
             n++;
         }
@@ -1158,80 +1192,28 @@ inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
 
 inline SynNode *Parser::assignSenP(int layer)
 {
-    int LAYER = layer, LEFT_TYPE, RIGHT_TYPE, SUB_TYPE, LEFT_CATE, LINE = -1;
-    SymTableEntry *LEFT_VALUE;
-    string NAME;
+    int LAYER = layer, attr_leftType, attr_rightType, attr_rightValue;
+    SymTableEntry *attr_leftSym;
+    string attr_strName;
     NonTerNode *node = new NonTerNode(TYPE_NTS::ASSIGN_SEN, true);
-    node->addChild(idenP(&NAME, &LINE));
-    LEFT_TYPE = node->getLastChild()->getIDENtype();
-    LEFT_VALUE = getEntryByName(NAME);
-    if (LEFT_VALUE == nullptr)
+    node->addChild(referenceP(LAYER, &attr_leftType, nullptr, true, 0));
+    if (symbol.type == TYPE_SYM::ASSIGN)
     {
-        addErrorMessage(LINE, 'c', "赋值语句引用了未定义的名字");
-    }
-    else if (LEFT_VALUE->getCATE() == CAT_CONST)
-    {
-        addErrorMessage(LINE, 'j', "给常量赋值");
-    }
-    else if (dynamic_cast<ArraySymEntry *>(LEFT_VALUE) != nullptr)
-    {
-        printPos(713339);
+        node->addChild(new TerNode(symbol));
+        nextSym();
+        node->addChild(expressionP(LAYER, &attr_rightType, &attr_rightValue));
     }
     else
     {
-        if (symbol.type == TYPE_SYM::LBRACK)
-        {
-            node->addChild(new TerNode(symbol));
-            nextSym();
-            node->addChild(expressionP(LAYER));
-            SUB_TYPE = node->getLastChild()->getIDENtype();
-            if (SUB_TYPE == TYPE_CHAR)
-            {
-                addErrorMessage(symbol.line, 'i', "赋值语句数组下标为字符型");
-            }
-            if (!(symbol.type == TYPE_SYM::RBRACK))
-            {
-                printPos(7733);
-                addErrorMessage(symbol.line, 'm', "赋值语句中数组缺少右中括号");
-            }
-            node->addChild(new TerNode(symbol));
-            nextSym();
-            if (symbol.type == TYPE_SYM::LBRACK)
-            {
-                node->addChild(new TerNode(symbol));
-                nextSym();
-                node->addChild(expressionP(LAYER));
-                SUB_TYPE = node->getLastChild()->getIDENtype();
-                if (SUB_TYPE == TYPE_CHAR)
-                {
-                    addErrorMessage(symbol.line, 'i', "赋值语句数组下标为字符型");
-                }
-                if (!(symbol.type == TYPE_SYM::RBRACK))
-                {
-                    printPos(776133);
-                    addErrorMessage(symbol.line, 'm', "赋值语句中数组缺少右中括号");
-                }
-                node->addChild(new TerNode(symbol));
-                nextSym();
-            }
-        }
-        if (symbol.type == TYPE_SYM::ASSIGN)
-        {
-            node->addChild(new TerNode(symbol));
-            nextSym();
-            node->addChild(expressionP(LAYER));
-            RIGHT_TYPE = node->getLastChild()->getIDENtype();
-        }
-        else
-            printPos(62562);
+        printPos(62562);
     }
-
     return node;
 }
 
-inline SynNode *Parser::ifelseSenP(int layer)
+inline SynNode *Parser::ifelseSenP(int layer, bool inFunc, int attr_retType, int* attr_retNum_syn)
 {
-    int LAYER = layer, LINE = -1;
+    int LAYER = layer, attr_intLine = -1;
+    bool attr_res;
     NonTerNode *node = new NonTerNode(TYPE_NTS::IFELSE_SEN, true);
     if (symbol.type == TYPE_SYM::IFTK)
     {
@@ -1241,7 +1223,7 @@ inline SynNode *Parser::ifelseSenP(int layer)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(conditionP(LAYER));
+            node->addChild(conditionP(LAYER, &attr_res));
             if (!(symbol.type == TYPE_SYM::RPARENT))
             {
                 printPos(5662325);
@@ -1255,59 +1237,73 @@ inline SynNode *Parser::ifelseSenP(int layer)
     }
     else
         printPos(9947252);
-    node->addChild(sentenceP(LAYER));
+    node->addChild(sentenceP(LAYER, inFunc, attr_retType));
     if (symbol.type == TYPE_SYM::ELSETK)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(LAYER));
+        node->addChild(sentenceP(LAYER, inFunc, attr_retType));
     }
     return node;
 }
 
-inline SynNode *Parser::compareOpP()
-{
+inline SynNode *Parser::compareOpP(int* attr_op)   
+{// 0 <; 1 <=; 2 >; 3 >=; 4 ==; 5 !=
     NonTerNode *node = new NonTerNode(TYPE_NTS::COMPARE_OP, false);
-    if (!(symbol.type == TYPE_SYM::LSS ||
-          symbol.type == TYPE_SYM::LEQ ||
-          symbol.type == TYPE_SYM::GRE ||
-          symbol.type == TYPE_SYM::GEQ ||
-          symbol.type == TYPE_SYM::EQL ||
-          symbol.type == TYPE_SYM::NEQ))
-    {
-        printPos(4946561);
+    switch(symbol.type) {
+        case TYPE_SYM::LSS:
+            *attr_op = 0;
+            break;
+        case TYPE_SYM::LEQ:
+            *attr_op = 1;
+            break;
+        case TYPE_SYM::GRE:
+            *attr_op = 2;
+            break;
+        case TYPE_SYM::GEQ:
+            *attr_op = 3;
+            break;
+        case TYPE_SYM::EQL:
+            *attr_op = 4;
+            break;
+        case TYPE_SYM::NEQ:
+            *attr_op = 5;
+            break;
+        default:
+            printPos(4946561);
     }
     node->addChild(new TerNode(symbol));
     nextSym();
     return node;
 }
 
-inline SynNode *Parser::conditionP(int layer)
+inline SynNode *Parser::conditionP(int layer, bool* attr_result)
 {
-    int LAYER = layer;
+    int LAYER = layer, attr_leftType, attr_rightType, attr_leftVal, attr_rightVal, attr_op;
     NonTerNode *node = new NonTerNode(TYPE_NTS::CONDITION, true);
-    node->addChild(expressionP(LAYER));
-    if (node->getLastChild()->isCHARexp())
+    node->addChild(expressionP(LAYER, &attr_leftType, &attr_leftVal));
+    if (attr_leftType == _TYPE_CHAR)
     {
         addErrorMessage(symbol.line, 'f', "条件判断出现char");
     }
-    node->addChild(compareOpP());
-    node->addChild(expressionP(LAYER));
-    if (node->getLastChild()->isCHARexp())
+    node->addChild(compareOpP(&attr_op));
+    node->addChild(expressionP(LAYER, &attr_rightType, &attr_rightVal));
+    if (attr_rightType == _TYPE_CHAR)
     {
         addErrorMessage(symbol.line, 'f', "条件判断出现char");
     }
+    *attr_result = false;
     return node;
 }
 
-inline SynNode *Parser::stepLengthP()
+inline SynNode *Parser::stepLengthP(int* attr_len)
 {
     NonTerNode *node = new NonTerNode(TYPE_NTS::STEP_LEN, true);
-    node->addChild(unsignedIntP());
+    node->addChild(unsignedIntP(attr_len));
     return node;
 }
 
-inline SynNode *Parser::loopSenP(int layer)
+inline SynNode *Parser::loopSenP(int layer, bool isFunc, int attr_type_inh, int* attr_retNum_syn)
 {
     int LAYER = layer;
     NonTerNode *node = new NonTerNode(TYPE_NTS::LOOP_SEN, true);
@@ -1317,9 +1313,10 @@ inline SynNode *Parser::loopSenP(int layer)
         nextSym();
         if (symbol.type == TYPE_SYM::LPARENT)
         {
+            bool attr_res;
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(conditionP(LAYER));
+            node->addChild(conditionP(LAYER, &attr_res));
             if (!(symbol.type == TYPE_SYM::RPARENT))
             {
                 printPos(11451);
@@ -1328,36 +1325,32 @@ inline SynNode *Parser::loopSenP(int layer)
             node->addChild(new TerNode(symbol));
             nextSym();
         }
-        else
+        else{
             printPos(414151);
-        node->addChild(sentenceP(LAYER));
+        }
+        node->addChild(sentenceP(LAYER, isFunc, attr_type_inh, attr_retNum_syn));
     }
     else if (symbol.type == TYPE_SYM::FORTK)
     {
-        string NAME;
+        string attr_strName;
         SymTableEntry *sym = nullptr;
-        int LINE, TYPE, CATE = _CAT_VAR;
+        int attr_line, attr_intType, attr_val;
         node->addChild(new TerNode(symbol));
         nextSym();
         if (symbol.type == TYPE_SYM::LPARENT)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(idenP(&NAME, &LINE));
-            sym = getEntryByName(NAME);
-            if (sym == nullptr)
-            {
-                addErrorMessage(LINE, 'c', "for语句中引用未定义的名字");
-            }
-            else if (sym->getCATE() == CAT_CONST)
-            {
-                addErrorMessage(LINE, 'j', "for语句中给常量赋值");
-            }
+            // phase 1
+            node->addChild(referenceP(LAYER, &attr_intType, &attr_val, true, 0));
             if (!(symbol.type == TYPE_SYM::ASSIGN))
+            {
                 printPos(841656);
+            }
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(expressionP(LAYER));
+            int attr_expVal, attr_expType;
+            node->addChild(expressionP(LAYER, &attr_expType, &attr_expVal));
             if (!(symbol.type == TYPE_SYM::SEMICN))
             {
                 printPos(99713);
@@ -1365,7 +1358,9 @@ inline SynNode *Parser::loopSenP(int layer)
             }
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(conditionP(LAYER));
+            // phase 2
+            bool attr_res;
+            node->addChild(conditionP(LAYER, &attr_res));
             if (!(symbol.type == TYPE_SYM::SEMICN))
             {
                 printPos(99713);
@@ -1373,35 +1368,24 @@ inline SynNode *Parser::loopSenP(int layer)
             }
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(idenP(&NAME, &LINE));
-            sym = getEntryByName(NAME);
-            if (sym == nullptr)
-            {
-                addErrorMessage(LINE, 'c', "for语句中引用未定义的名字");
-            }
-            else if (sym->getCATE() == CAT_CONST)
-            {
-                addErrorMessage(LINE, 'j', "for语句中给常量赋值");
-            }
+            node->addChild(referenceP(LAYER, &attr_intType, &attr_val, true, 0));
             if (!(symbol.type == TYPE_SYM::ASSIGN))
+            {
                 printPos(61319);
+            }
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(idenP(&NAME, &LINE));
-            sym = getEntryByName(NAME);
-            if (sym == nullptr)
-            {
-                addErrorMessage(LINE, 'c', "for语句中引用未定义的名字");
-            }
-            else if (sym->getCATE() == CAT_CONST)
-            {
-                addErrorMessage(LINE, 'j', "for语句中给常量赋值");
-            }
+            // phase 3
+            node->addChild(referenceP(LAYER, &attr_intType, &attr_val, false, 0));
             if (!(symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU))
+            {
                 printPos(26262);
+            }
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(stepLengthP());
+
+            int attr_len;
+            node->addChild(stepLengthP(&attr_len));
             if (!(symbol.type == TYPE_SYM::RPARENT))
             {
                 printPos(911451);
@@ -1411,15 +1395,17 @@ inline SynNode *Parser::loopSenP(int layer)
             nextSym();
         }
         else
+        {
             printPos(907691);
-        node->addChild(sentenceP(LAYER));
+        }
+        node->addChild(sentenceP(LAYER, isFunc, attr_type_inh, attr_retNum_syn));
     }
     return node;
 }
 
-inline SynNode *Parser::switchSenP(int layer)
+inline SynNode *Parser::switchSenP(int layer, bool isFunc, int attr_retType_inh, int* attr_retNum_syn)
 {
-    int LAYER = layer, TYPE_EXP;
+    int LAYER = layer, attr_expType, attr_val;
     NonTerNode *node = new NonTerNode(TYPE_NTS::SWITCH_SEN, true);
     if (symbol.type == TYPE_SYM::SWITCHTK)
     {
@@ -1429,8 +1415,7 @@ inline SynNode *Parser::switchSenP(int layer)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(expressionP(LAYER));
-            TYPE_EXP = node->getLastChild()->isCHARexp() ? TYPE_CHAR : TYPE_INT;
+            node->addChild(expressionP(LAYER, &attr_expType, &attr_val));
             if (!(symbol.type == TYPE_SYM::RPARENT))
             {
                 printPos(77251);
@@ -1440,15 +1425,19 @@ inline SynNode *Parser::switchSenP(int layer)
             nextSym();
         }
         else
+        {
             printPos(14149);
+        }
         if (symbol.type == TYPE_SYM::LBRACE)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(caseListP(LAYER, TYPE_EXP));
-            node->addChild(defaultP(LAYER));
+            node->addChild(caseListP(LAYER, attr_expType, isFunc, attr_retType_inh, attr_retNum_syn));
+            node->addChild(defaultP(LAYER, isFunc, attr_retType_inh, attr_retNum_syn));
             if (!(symbol.type == TYPE_SYM::RBRACE))
+            {
                 printPos(214156);
+            }
             node->addChild(new TerNode(symbol));
             nextSym();
         }
@@ -1460,44 +1449,46 @@ inline SynNode *Parser::switchSenP(int layer)
     return node;
 }
 
-inline SynNode *Parser::caseSenP(int layer, int type_exp)
+inline SynNode *Parser::caseSenP(int layer, int attr_expType_inh, bool isFunc, int attr_retType_inh, int* attr_retNum_syn)
 {
-    int LAYER = layer, TYPE_EXP = type_exp, TYPE_CON;
+    int LAYER = layer, attr_constType, attr_constVal;
     NonTerNode *node = new NonTerNode(TYPE_NTS::CASE_SEN, true);
     if (symbol.type == TYPE_SYM::CASETK)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(constP());
-        TYPE_CON = node->getLastChild()->isCHARconst() ? TYPE_CHAR : TYPE_INT;
-        if (TYPE_CON != TYPE_EXP)
+        node->addChild(constP(&attr_constType, &attr_constVal));
+        if (attr_constType != attr_expType_inh)
         {
             addErrorMessage(symbol.line, 'o', "case语句常量类型不一致");
         }
-        if (!(symbol.type == TYPE_SYM::COLON))
+        if (!(symbol.type == TYPE_SYM::COLON)){
             printPos(366134);
+        }
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(LAYER));
+        node->addChild(sentenceP(LAYER, isFunc, attr_retType_inh, attr_retNum_syn));
     }
     else
-        printPos(96911);
-    return node;
-}
-
-inline SynNode *Parser::caseListP(int layer, int type_exp)
-{
-    int LAYER = layer, TYPE_EXP = type_exp;
-    NonTerNode *node = new NonTerNode(TYPE_NTS::CASE_LIST, true);
-    node->addChild(caseSenP(LAYER, TYPE_EXP));
-    while (symbol.type == TYPE_SYM::CASETK)
     {
-        node->addChild(caseSenP(LAYER, TYPE_EXP));
+        printPos(96911);
     }
     return node;
 }
 
-inline SynNode *Parser::defaultP(int layer)
+inline SynNode *Parser::caseListP(int layer, int attr_expType_inh, bool isFunc, int attr_retType_inh, int* attr_retNum_syn)
+{
+    int LAYER = layer;
+    NonTerNode *node = new NonTerNode(TYPE_NTS::CASE_LIST, true);
+    node->addChild(caseSenP(LAYER, attr_expType_inh, isFunc, attr_retType_inh, attr_retNum_syn));
+    while (symbol.type == TYPE_SYM::CASETK)
+    {
+        node->addChild(caseSenP(LAYER, attr_expType_inh, isFunc, attr_retType_inh, attr_retNum_syn));
+    }
+    return node;
+}
+
+inline SynNode *Parser::defaultP(int layer, bool isFunc, int attr_retType_inh, int* attr_retNum_syn)
 {
     int LAYER = layer;
     NonTerNode *node = new NonTerNode(TYPE_NTS::DEFAULT, true);
@@ -1506,10 +1497,12 @@ inline SynNode *Parser::defaultP(int layer)
         node->addChild(new TerNode(symbol));
         nextSym();
         if (!(symbol.type == TYPE_SYM::COLON))
+        {
             printPos(888888);
+        }
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(LAYER));
+        node->addChild(sentenceP(LAYER, isFunc, attr_retType_inh, attr_retNum_syn));
     }
     else
     {

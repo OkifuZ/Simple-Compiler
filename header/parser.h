@@ -53,31 +53,32 @@ public:
     SynNode* typeIdenP(int*);
     SynNode* arrayConstP(int, int*, int*); // {}
     SynNode* doubleArrayConstP(int, int, int*, int*); // {{}}
-    SynNode* oneDdeclareP(int* size); // [x]
-    SynNode* arguListP(int layer, int*num, FuncSymEntry* func);
-    SynNode* termP(int layer);
-    SynNode* factorP(int layer);
-    SynNode* expressionP(int layer);
-    SynNode* callFuncSenP(int layer);
-    SynNode* valueArgueListP(int layer, FuncSymEntry* func);
-    SynNode* assignSenP(int layer);
-    SynNode* sentenceP(int layer, int type = TYPE_VOID);
-    SynNode* sentenceListP(int layer, int type = TYPE_VOID);
-    SynNode* ifelseSenP(int layer);
-    SynNode* conditionP(int layer);
-    SynNode* loopSenP(int layer);
-    SynNode* stepLengthP();
-    SynNode* switchSenP(int layer);
-    SynNode* caseListP(int layer, int type);
-    SynNode* caseSenP(int layer, int type);
-    SynNode* defaultP(int layer);
-    SynNode* readSenP();
-    SynNode* writeSenP(int layer);
-    SynNode* returnSenP(int layer, int type = TYPE_VOID);
-    SynNode* compareOpP();
-    SynNode* compoundSenP(int layer, int type = TYPE_VOID);
+    SynNode* oneDdeclareP(int* ); // [x]
+    SynNode* arguListP(int, int*, FuncSymEntry*);
     SynNode* refuncDefineP(int layer);
     SynNode* nonrefuncDefineP(int layer);
+    SynNode* termP(int layer, int*, int*);
+    SynNode* factorP(int layer, int*, int*);
+    SynNode* expressionP(int layer, int*, int*);
+    SynNode* referenceP(int layer, int*, int*, bool, int);
+    SynNode* callFuncSenP(int layer, int*, int*);
+    SynNode* valueArgueListP(int layer, FuncSymEntry* func);
+    SynNode* assignSenP(int layer);
+    SynNode* sentenceP(int layer, bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* sentenceListP(int layer, bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* ifelseSenP(int layer, bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* conditionP(int, bool*);
+    SynNode* loopSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* stepLengthP(int*);
+    SynNode* switchSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* caseListP(int layer, int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* caseSenP(int layer, int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* defaultP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* readSenP();
+    SynNode* writeSenP(int layer);
+    SynNode* returnSenP(int layer, int type = _TYPE_VOID);
+    SynNode* compareOpP(int*);
+    SynNode* compoundSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
     SynNode* mainP(int layer=0);
 
     void addErrorMessage(int line, char iden, std::string mess="") {
@@ -97,12 +98,6 @@ public:
     SymTableEntry* getEntryByName(std::string name) {
         SymTableEntry* sym = symbolTable.getSymByName(name);
         return sym;
-    }
-
-    bool getIDENtype(std::string name, int *type, int layer) {
-        int TYPE = symbolTable.idenTYPE(name, layer);
-        *type = TYPE;
-        return TYPE != TYPE_ERROR;
     }
 
     void printError(std::ostream& out);
