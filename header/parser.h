@@ -30,37 +30,27 @@ public:
     int pos = 0;
     int top = 0;
 
-
-
-    bool nextSym();
-    void preReadSym(int time = 1);
-    void flushPreRead();
-    bool cacheContainsSym(TYPE_SYM type);
-
-    SynNode* stringP(std::string*);
+// programAnalysis highlight
+    SynNode* stringP(std::string&);
     SynNode* unsignedIntP(int*);
     SynNode* intP(int*);
     SynNode* charP(char*);
     SynNode* constDefP(int layer); //*
     SynNode* constDecP(int layer); //*
-    SynNode* idenP(std::string*, int *);
-    SynNode* decHeadP(std::string*, int*, int*);
+    SynNode* idenP(std::string&, int *);
+    SynNode* decHeadP(std::string&, int*, int*);
     SynNode* constP(int*, int*, int*);
     SynNode* varDecP(int layer);
     SynNode* varDefP(int layer);
     SynNode* varDerWithInitP(int layer, int type);
     SynNode* varDerWithoutInitP(int layer, int type);
     SynNode* typeIdenP(int*);
-    SynNode* arrayConstP(int, int*, int*); // {}
-    SynNode* doubleArrayConstP(int, int, int*, int*); // {{}}
-    SynNode* oneDdeclareP(int* ); // [x]
     SynNode* arguListP(int, int*, FuncSymEntry*);
     SynNode* refuncDefineP(int layer);
     SynNode* nonrefuncDefineP(int layer);
     SynNode* termP(int layer, int*, int*);
     SynNode* factorP(int layer, int*, int*);
     SynNode* expressionP(int layer, int*, int*);
-    SynNode* referenceP(int layer, int*, int*, bool, int);
     SynNode* callFuncSenP(int layer, int*, int*);
     SynNode* valueArgueListP(int layer, FuncSymEntry* func);
     SynNode* assignSenP(int layer);
@@ -79,51 +69,45 @@ public:
     SynNode* returnSenP(int, int, int*);
     SynNode* compareOpP(int*);
     SynNode* compoundSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    void semicnP(NonTerNode*);
     SynNode* mainP(int layer);
 
-    void addErrorMessage(int line, char iden, std::string mess="") {
-        errorList.push_back(ErrorMessage(line, iden, mess));
-    }
+// programAnalysis nonhighlight
+    SynNode* arrayConstP(int, int*, int*); // {}
+    SynNode* doubleArrayConstP(int, int, int*, int*); // {{}}
+    SynNode* oneDdeclareP(int* ); // [x]
+    SynNode* referenceP(int layer, int*, int*, bool, int);
+    void semicnP(NonTerNode*);
 
-    bool checkDuplicate(std::string name, int layer) {
-        return symbolTable.duplicateName(name, layer);
-    }
 
-    FuncSymEntry* getFUNC_CALL(std::string name) {
-        SymTableEntry* sym = symbolTable.getSymByName(name);
-        FuncSymEntry* func = dynamic_cast<FuncSymEntry*>(sym);
-        return func;
-    }
+// symbol table
+    bool checkDuplicate(std::string name, int layer) { return symbolTable.duplicateName(name, layer); }
 
-    SymTableEntry* getEntryByName(std::string name) {
-        SymTableEntry* sym = symbolTable.getSymByName(name);
-        return sym;
-    }
+    FuncSymEntry* getFUNC_CALL(std::string name);
+
+    SymTableEntry* getEntrySymByName(std::string name) { return symbolTable.getSymByName(name); }
+    SymTableEntry* getEntryTypeByName(std::string name) { return symbolTable.getTypeByName(name); }
+    
 
     void popSym_CurLayer(int layer) {
         symbolTable.popSym(layer);
     }
 
+    void addSymbolEntry(SymTableEntry* sym) { symbolTable.insertSymbolEntry(sym); }
+
+// lexical tools
+    bool nextSym();
+    void preReadSym(int time = 1);
+    void flushPreRead();
+    bool cacheContainsSym(TYPE_SYM type);
+    int str2int(std::string s);
+    char str2char(std::string s);
+
+// error handling
     void printError(std::ostream& out);
-
-    int str2int(std::string s) {
-        int ans = 0;
-        char c;
-        for (int i = 0; i < s.size(); i++) {
-            c = s[i];
-            if (c >= '9' || c <= '0') printPos(88754);
-            ans = ans * 10 + (c - '0');
-        }
-        return ans;
-    }
-
-    char str2char(std::string s) {
-        if (s.size() > 1) printPos(8069);
-        return s[0];
-    }
-
     
+    void addErrorMessage(int line, char iden, std::string mess="") {
+        errorList.push_back(ErrorMessage(line, iden, mess));
+    }
 
 private:
     bool flushed = true;

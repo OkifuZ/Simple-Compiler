@@ -7,20 +7,7 @@
 #include <vector>
 
 
-
-std::string upperCase(const std::string& s);
-
 void printPos(int i);
-
-bool isEmpty(const char& c);
-
-bool isLetter(const char& c);
-
-bool isNum(const char& s);
-
-bool isASCII(const char& c);
-
-
 
 
 enum class TYPE_SYM{OTHERS = -3, ERROR = -2, ENDS = -1, IDENFR = 0, INTCON, CHARCON, STRCON, CONSTTK,
@@ -39,7 +26,7 @@ public:
     TYPE_SYM type;
     int line;
 
-    LexSymbol(TYPE_SYM typ, const std::string& tok) : token(tok), type(typ), line(-1) {}
+    LexSymbol(TYPE_SYM typ, const std::string& tok, int line_) : token(tok), type(typ), line(line_) {}
     LexSymbol() : token(""), type(TYPE_SYM::ERROR), line(-1) {}
 };
 
@@ -51,6 +38,7 @@ private:
     std::istream& file;
     static std::vector<std::string> typeStrings;
     static std::vector<std::string> reservedTable;
+    int global_Line = 1;
 
 public:
     LexicalAnalyzer(std::istream& fs) : file(fs) {}
@@ -71,6 +59,19 @@ public:
         }
         return TYPE_SYM::IDENFR;
     }
+
+    bool isEmpty(const char& c);
+    int getGlobalLine() { return global_Line; }
+    
+    static std::string upperCase(const std::string& s);
+
+    static bool isLetter(const char& c);
+
+    static bool isNum(const char& s);
+
+    static bool isASCII(const char& c);
+
+
 };
 
 

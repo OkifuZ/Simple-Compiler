@@ -65,3 +65,8 @@ void SymbolTable::popSym(int layer) {
 		}
 	}
 }
+
+void SymbolTable::insertSymbolEntry(SymTableEntry* sym) {
+	symTable.push_back(sym);
+	sym->setINDEX(symTable.size() - 1); // set index(pos) of sym
+}

@@ -84,7 +84,6 @@ public:
 		ScalerSymEntry(name, cate, type, layer), parFuncPos(parFuncPos_) {}
 
 	int getPAR_FUNC_POS() { return parFuncPos; }
-
 	void setPAR_FUNC_POS(int pos) { parFuncPos = pos; }
 
 private:
@@ -96,10 +95,11 @@ public:
 	FuncSymEntry(std::string name, int cate, int type, int layer, int argnum=0) :
 		SymTableEntry(name, cate, type, layer), argNum(argnum) {}
 
-	int getARGNUM() { return argNum; }
-
 	void addParaType(int type) { paraTypeList.push_back(type); }
-	std::vector<int>& getParaTypeList() { return paraTypeList; }
+
+	int getARGNUM() { return argNum; }
+	std::vector<int> 
+		getParaTypeList() { return paraTypeList; }
 
 	void setARGNUM(int n) { argNum = n; }
 
@@ -111,33 +111,24 @@ private:
 
 
 class SymbolTable {
-private:
-	std::vector<SymTableEntry*> symTable;
-	
 public:
 	SymbolTable() {}
 
-	void insertSymbolEntry(SymTableEntry* sym) {
-		symTable.push_back(sym);
-		sym->setINDEX(symTable.size() - 1); // set index(pos) of sym
-	}
+	void insertSymbolEntry(SymTableEntry* sym);
 
-	void popSymbol() {
-		symTable.pop_back();
-	}
-
-	SymTableEntry* topSymbol() {
-		return symTable.back();
-	}
+	void popSym(int layer);
 
 	bool duplicateName(std::string name, int layer);
 
 	int getTypeByName(std::string name, int layer);
-
 	SymTableEntry* getSymByName(std::string name);
 
-	void popSym(int layer);
+	// void popSymbol() { symTable.pop_back(); }
+	// SymTableEntry* topSymbol() { return symTable.back(); }
 
+private:
+	std::vector<SymTableEntry*> symTable;
+	
 };
 
 class ErrorMessage {

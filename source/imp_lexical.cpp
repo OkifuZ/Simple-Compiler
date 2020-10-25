@@ -185,7 +185,7 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
 
 /*SOME TOOLS*/
 
-string upperCase(const string& s) {
+string LexicalAnalyzer::upperCase(const string& s) {
     string ans;
     char c;
     for (auto it = s.begin(); it != s.end(); it++) {
@@ -196,19 +196,22 @@ string upperCase(const string& s) {
     return ans;
 }
 
-bool isEmpty(const char& c) {
+bool LexicalAnalyzer::isEmpty(const char& c) {
+    if (c == '\n') {
+        global_Line++;
+    }
     return (c == ' ' || c == '\0' || c == '\n' || c == '\t' || c == '\r');
 }
 
-bool isLetter(const char& c) {
+bool LexicalAnalyzer::isLetter(const char& c) {
     return ((c <='Z' && c >='A') || (c <='z' && c >= 'a') || c == '_');
 }
 
-bool isNum(const char& s) {
+bool LexicalAnalyzer::isNum(const char& s) {
     return s <= '9' && s >= '0';
 }
 
-bool isASCII(const char& c) {
+bool LexicalAnalyzer::isASCII(const char& c) {
     return (c <= 126 && c >= 35) || c == 32 || c == 33;
 }
 
