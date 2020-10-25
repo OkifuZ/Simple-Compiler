@@ -1,4 +1,4 @@
-#include "../header/lexical.h"
+﻿#include "../header/lexical.h"
 #include "../header/parser.h"
 #include "../header/synTree.h"
 #include <iostream>

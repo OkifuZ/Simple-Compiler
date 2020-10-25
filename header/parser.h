@@ -1,4 +1,4 @@
-#ifndef PARSER_H_INCLUDED
+﻿#ifndef PARSER_H_INCLUDED
 #define PARSER_H_INCLUDED
 
 #include <iostream>
@@ -85,7 +85,7 @@ public:
     FuncSymEntry* getFUNC_CALL(std::string name);
 
     SymTableEntry* getEntrySymByName(std::string name) { return symbolTable.getSymByName(name); }
-    SymTableEntry* getEntryTypeByName(std::string name) { return symbolTable.getTypeByName(name); }
+    int getEntryTypeByName(std::string name) { return symbolTable.getTypeByName(name); }
     
 
     void popSym_CurLayer(int layer) {

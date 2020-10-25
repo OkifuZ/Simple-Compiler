@@ -1,4 +1,4 @@
-#ifndef LEXICAL_H_INCLUDED
+﻿#ifndef LEXICAL_H_INCLUDED
 #define LEXICAL_H_INCLUDED
 
 #include <iostream>

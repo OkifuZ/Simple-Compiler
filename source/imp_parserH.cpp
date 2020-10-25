@@ -241,9 +241,9 @@ inline SynNode *Parser::constP(int *attr_int_syn, int* attr_intTYpe_syn, int *at
     {
         node->addChild(new TerNode(symbol));
         *attr_intLine_syn = symbol.line;
-        char* attr_temChar;
-        node->addChild(charP(attr_temChar));
-        *attr_int_syn = *attr_temChar;
+        char attr_temChar;
+        node->addChild(charP(&attr_temChar));
+        *attr_int_syn = attr_temChar;
         *attr_intTYpe_syn = _TYPE_CHAR;
         nextSym();
     }
@@ -339,7 +339,6 @@ inline SynNode *Parser::varDerWithoutInitP(int layer, int attr_intType_inh)
 {
     int attr_cate_inh = _CAT_VAR, LAYER = layer, attr_size1_syn, attr_size2_syn;
     int attr_intLine_syn = 0;
-    string attr_strNmae_syn;
     string attr_strNmae_syn;
     NonTerNode *node = new NonTerNode(TYPE_NTS::VAR_DEFWIOU_INIT, true);
     node->addChild(idenP(attr_strNmae_syn, &attr_intLine_syn));
@@ -515,10 +514,11 @@ inline SynNode *Parser::termP(int layer, int* attr_intType_syn, int* attr_value_
         node->addChild(new TerNode(symbol));
         nextSym();
         node->addChild(factorP(LAYER, &attr_type_tem, &attr_value_tem));
-        attr_value_ans = (symbol.type == TYPE_SYM::MULT ? 
-            attr_value_ans * attr_value_tem : attr_value_ans / attr_type_tem);
+        /*attr_value_ans = (symbol.type == TYPE_SYM::MULT ? 
+            attr_value_ans * attr_value_tem : attr_value_ans / (attr_value_tem == 0 ? 0.1 : attr_value_tem));*/
     }
-    *attr_value_syn = attr_value_ans;
+    /**attr_value_syn = attr_value_ans;*/
+    *attr_value_syn = 0;
     return node;
 }
 
@@ -707,7 +707,7 @@ SynNode *Parser::nonrefuncDefineP(int layer)
         {
             addErrorMessage(attr_line, 'b', "有返回值函数名字重复定义");
         }
-        FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_line, attr_line, LAYER, 0);
+        FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_cate, attr_line, LAYER, 0);
         addSymbolEntry(symFUNC);
         if (symbol.type == TYPE_SYM::LPARENT)
         {
@@ -807,7 +807,7 @@ inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
         symbol.type == TYPE_SYM::CHARCON)
     {
         node->addChild(expressionP(LAYER, &attr_type_tem, &attr_value_tem));
-        if (func->getParaTypeList().empty() || n >= func->getARGNUM())
+        if (func->getParaTypeList().empty() || n >= attr_argnum)
         {
             addErrorMessage(symbol.line, 'd', "函数调用参数个数不匹配");
         }
@@ -821,7 +821,7 @@ inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
             node->addChild(new TerNode(symbol));
             nextSym();
             node->addChild(expressionP(LAYER, &attr_type_tem, &attr_value_tem));
-            if (func->getParaTypeList().empty() || n >= func->getARGNUM())
+            if (func->getParaTypeList().empty() || n >= attr_argnum)
             {
                 addErrorMessage(symbol.line, 'd', "函数调用参数个数不匹配");
             }
@@ -832,7 +832,7 @@ inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
             n++;
         }
     }
-    if (func->getARGNUM() != n)
+    if (attr_argnum != n)
     {
         addErrorMessage(symbol.line, 'd', "函数调用个数不匹配");
     }
@@ -842,7 +842,7 @@ inline SynNode *Parser::valueArgueListP(int layer, FuncSymEntry *func)
 inline SynNode *Parser::assignSenP(int layer)
 {
     int LAYER = layer, attr_leftType, attr_rightType, attr_rightValue;
-    SymTableEntry *attr_leftSym;
+    //SymTableEntry *attr_leftSym;
     string attr_strName;
     NonTerNode *node = new NonTerNode(TYPE_NTS::ASSIGN_SEN, true);
     node->addChild(referenceP(LAYER, &attr_leftType, nullptr, true, 0));
@@ -982,7 +982,6 @@ inline SynNode *Parser::loopSenP(int layer, bool isFunc, int attr_type_inh, int*
     else if (symbol.type == TYPE_SYM::FORTK)
     {
         string attr_strName;
-        SymTableEntry *sym = nullptr;
         int attr_line, attr_intType, attr_val;
         node->addChild(new TerNode(symbol));
         nextSym();
@@ -1170,7 +1169,7 @@ inline SynNode *Parser::defaultP(int layer, bool isFunc, int attr_retType_inh, i
 
 inline SynNode *Parser::readSenP(int layer)
 {
-    int attr_line, LAYER = layer, attr_type, attr_val;
+    int attr_line/*, LAYER = layer, attr_type, attr_val*/;
     string attr_strName;
     SymTableEntry *sym = nullptr;
     NonTerNode *node = new NonTerNode(TYPE_NTS::READ_SEN, true);
@@ -1220,7 +1219,7 @@ inline SynNode *Parser::writeSenP(int layer)
     int LAYER = layer, attr_line;
     string attr_str;
     int attr_type, attr_val;
-    SymTableEntry *sym = nullptr;
+    //SymTableEntry *sym = nullptr;
     NonTerNode *node = new NonTerNode(TYPE_NTS::WRITE_SEN, true);
     if (symbol.type == TYPE_SYM::PRINTFTK)
     {

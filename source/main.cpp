@@ -1,6 +1,6 @@
-#include "parser.h"
-#include "lexical.h"
-#include "synTree.h"
+﻿#include "../header/parser.h"
+#include "../header/lexical.h"
+#include "../header/synTree.h"
 #include <fstream>
 #include <iostream>
 

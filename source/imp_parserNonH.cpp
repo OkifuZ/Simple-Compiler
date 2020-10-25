@@ -1,4 +1,4 @@
-#include "../header/lexical.h"
+﻿#include "../header/lexical.h"
 #include "../header/parser.h"
 #include "../header/synTree.h"
 #include <iostream>
@@ -12,7 +12,7 @@
 using namespace std;
 
 
-inline SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_intLine_syn)
+SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_intLine_syn)
 {
     int i = 0, attr_temType;
     int attr_conVal_syn;
@@ -55,7 +55,7 @@ inline SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, in
     return node;
 }
 
-inline SynNode *Parser::doubleArrayConstP
+SynNode *Parser::doubleArrayConstP
 (int attr_size1_inh, int attr_size2_inh, int *attr_intType_syn, int* attr_intLine_syn)
 {
     int i = 0, attr_temType, attr_line;
@@ -97,7 +97,7 @@ inline SynNode *Parser::doubleArrayConstP
     return node;
 }
 
-inline SynNode *Parser::oneDdeclareP(int *attr_size_syn)
+SynNode *Parser::oneDdeclareP(int *attr_size_syn)
 {
     NonTerNode *node = new NonTerNode(TYPE_NTS::ONED_DEC, false);
     if (symbol.type == TYPE_SYM::LBRACK)
@@ -183,9 +183,10 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
     if (attr_value_syn != nullptr) {
         *attr_value_syn = 0; // so for no access to memory
     }
+    return node;
 }
 
-inline void Parser::semicnP(NonTerNode* node) {
+void Parser::semicnP(NonTerNode* node) {
     if (!(symbol.type == TYPE_SYM::SEMICN))
     {
         addErrorMessage(symbol.line, 'k', "缺少分号");

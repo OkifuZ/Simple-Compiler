@@ -1,4 +1,4 @@
-#ifndef SYNTREE_H_INCLUDED
+﻿#ifndef SYNTREE_H_INCLUDED
 #define SYNTREE_H_INCLUDED
 
 #include <string>

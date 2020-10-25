@@ -1,4 +1,4 @@
-#include <vector>
+﻿#include <vector>
 #include <string>
 #include <tuple>
 #include "../header/errHand.h"
@@ -43,11 +43,10 @@ SymTableEntry* SymbolTable::getSymByName(std::string name) {
 	return nullptr;
 }
 
-int SymbolTable::getTypeByName(string name, int layer) {
+int SymbolTable::getTypeByName(string name) {
 	for (int i = symTable.size() - 1; i >= 0; i--) {
 		string s = symTable[i]->getName();
-		int la = symTable[i]->getLAYER();
-		if (layer <= la && strSame(s, name)) {
+		if (strSame(s, name)) {
 			return symTable[i]->getTYPE();
 		}
 	}
@@ -57,11 +56,11 @@ int SymbolTable::getTypeByName(string name, int layer) {
 void SymbolTable::popSym(int layer) {
 	int len = symTable.size();
 	for (int i = len - 1; i >= 0; i--) {
-		if (symTable[i]->getLAYER() == layer) {
-			symTable.pop_back();
-		}
 		if (symTable[i]->getLAYER() < layer) {
 			break;
+		}
+		if (symTable[i]->getLAYER() == layer) {
+			symTable.pop_back();
 		}
 	}
 }

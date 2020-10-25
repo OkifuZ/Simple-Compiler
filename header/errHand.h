@@ -1,4 +1,4 @@
-#ifndef ERRHAND_H_INCLUDED
+﻿#ifndef ERRHAND_H_INCLUDED
 #define ERRHAND_H_INCLUDED
 
 #include <string>
@@ -120,7 +120,7 @@ public:
 
 	bool duplicateName(std::string name, int layer);
 
-	int getTypeByName(std::string name, int layer);
+	int getTypeByName(std::string name);
 	SymTableEntry* getSymByName(std::string name);
 
 	// void popSymbol() { symTable.pop_back(); }
