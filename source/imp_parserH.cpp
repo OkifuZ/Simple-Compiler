@@ -234,18 +234,16 @@ inline SynNode *Parser::decHeadP(string& attr_strNmae_syn, int *attr_intType_syn
     return node;
 }
 
-inline SynNode *Parser::constP(int *attr_int_syn, int* attr_intTYpe_syn, int *attr_intLine_syn)
+inline SynNode *Parser::constP(int* attr_intTYpe_syn, int* attr_int_syn, int *attr_intLine_syn)
 {
     NonTerNode *node = new NonTerNode(TYPE_NTS::CONSTANT, true);
     if (symbol.type == TYPE_SYM::CHARCON)
     {
-        node->addChild(new TerNode(symbol));
         *attr_intLine_syn = symbol.line;
         char attr_temChar;
         node->addChild(charP(&attr_temChar));
-        *attr_int_syn = attr_temChar;
+        *attr_int_syn = static_cast<int>(attr_temChar);
         *attr_intTYpe_syn = _TYPE_CHAR;
-        nextSym();
     }
     else
     {
@@ -275,7 +273,7 @@ inline SynNode *Parser::varDerWithInitP(int layer, int attr_intType_inh)
         hasASSIGN = true;
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(constP(&attr_value_syn, &attr_conType_syn, &attr_intLine_syn));
+        node->addChild(constP(&attr_conType_syn, &attr_value_syn, &attr_intLine_syn));
         if (attr_intType_inh != attr_conType_syn)
         {
             addErrorMessage(attr_intLine_syn, 'o', "变量定义初始化标量常量类型不一致");

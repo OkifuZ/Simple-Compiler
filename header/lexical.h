@@ -25,9 +25,11 @@ public:
     std::string token;
     TYPE_SYM type;
     int line;
+    bool hasError;
 
-    LexSymbol(TYPE_SYM typ, const std::string& tok, int line_) : token(tok), type(typ), line(line_) {}
-    LexSymbol() : token(""), type(TYPE_SYM::ERROR), line(-1) {}
+    LexSymbol(TYPE_SYM typ, const std::string& tok, int line_, bool hasError_) : 
+        token(tok), type(typ), line(line_), hasError(hasError_) {}
+    LexSymbol() : token(""), type(TYPE_SYM::ERROR), line(-1), hasError(false) {}
 };
 
 std::ostream & operator<<(std::ostream &out, LexSymbol &sy);
@@ -42,7 +44,7 @@ private:
 
 public:
     LexicalAnalyzer(std::istream& fs) : file(fs) {}
-    TYPE_SYM getsym(std::string& token);
+    TYPE_SYM getsym(std::string& token, bool* hasError);
 
     static std::string& getTypeString(TYPE_SYM type) {
         int index = static_cast<int>(type);

@@ -21,7 +21,7 @@ SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(constP(&attr_conVal_syn, attr_intType_syn, attr_intLine_syn));
+        node->addChild(constP( attr_intType_syn, &attr_conVal_syn, attr_intLine_syn));
         i++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
@@ -34,7 +34,7 @@ SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_
             }
             nextSym();
             int attr_line_tem;
-            node->addChild(constP(&attr_conVal_syn, &attr_temType, &attr_line_tem));
+            node->addChild(constP(&attr_temType, &attr_conVal_syn, &attr_line_tem));
             if (attr_temType != *attr_intType_syn)
             {
                 *attr_intType_syn = _TYPE_ERROR;

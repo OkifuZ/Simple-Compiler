@@ -37,7 +37,7 @@ vector<string> LexicalAnalyzer::reservedTable{"CONST", "INT", "CHAR", "VOID",
                                               "FOR", "SCANF", "PRINTF", "RETURN"};
 
 
-TYPE_SYM LexicalAnalyzer::getsym(string& token) {
+TYPE_SYM LexicalAnalyzer::getsym(string& token, bool* hasError) {
     token.clear();
     char c = '\0';
     while (isEmpty(c)) c = this->file.get();
@@ -59,21 +59,21 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         return TYPE_SYM::INTCON;
     }
     else if (c == '\'') {
-        bool error_ = false;
         c = this->file.get();
         if (c == '+' || c == '-' || c == '*' || c == '/' || isNum(c) || isLetter(c)) {
             token += c;
         }
         else {
-            error_ = true;
+            token += c;
+            *hasError = true;
         }
         c = this->file.get();
         if (c != '\'')
         {
             printPos(17761);
-            error_ = true;
+            *hasError = true;
         }
-        return error_ ? TYPE_SYM::ERROR : TYPE_SYM::CHARCON;
+        return TYPE_SYM::CHARCON;
     }
     else if (c == '"') {
         int len = 0;
@@ -87,12 +87,15 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
             if (len == 0)
             {
                 printPos(91102);
-                return TYPE_SYM::ERROR;
+                cout << global_Line <<endl;
+                *hasError = true;
             }
-            return TYPE_SYM::STRCON;
         }
-        printPos(20098);
-        return TYPE_SYM::ERROR;
+        else {
+            *hasError = true;
+            printPos(20098);
+        }
+        return TYPE_SYM::STRCON;
     }
     else if (c == '-') {
         token += c;
@@ -152,7 +155,7 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         }
         else {
             printPos(3);
-            return TYPE_SYM::ERROR;
+            *hasError = true;
         }
     }
     else if (c == ':') {

@@ -37,7 +37,7 @@ bool Parser::nextSym()
         pos++;
     }
     this->flushed = (top == pos);
-    if (symbol.type == TYPE_SYM::ERROR)
+    if (symbol.hasError || symbol.type == TYPE_SYM::ERROR)
     {
         addErrorMessage(symbol.line, 'a', "词法错误");
     }
@@ -54,8 +54,9 @@ void Parser::preReadSym(int time)
         else
         {
             string token;
-            TYPE_SYM type = this->lexicalAnalyzer.getsym(token);
-            LexSymbol sym = LexSymbol(type, token, lexicalAnalyzer.getGlobalLine());
+            bool hasError = false;
+            TYPE_SYM type = this->lexicalAnalyzer.getsym(token, &hasError);
+            LexSymbol sym = LexSymbol(type, token, lexicalAnalyzer.getGlobalLine(), hasError);
             record.push_back(sym);
             top++;
         }
