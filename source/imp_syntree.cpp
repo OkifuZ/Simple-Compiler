@@ -26,6 +26,7 @@ const std::vector<std::string> STRING_NTS_LIST = {
 const string get_STRING_NTS(TYPE_NTS type) {
 	int index = static_cast<int>(type) - 0;
 	if (index > 36) return "";
+	if (index < 0) return "";
 	return STRING_NTS_LIST[index];
 }
 

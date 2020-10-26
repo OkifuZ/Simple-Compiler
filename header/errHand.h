@@ -15,16 +15,6 @@
 #define _TYPE_CHAR 1
 
 
-//enum class TYPE_SYM_CLASS {
-//	INVALID = -1, 
-//	VAR_INT = 0, VAR_CHAR, 
-//	INT_ARR_DIM1, INT_ARR_DIM2, 
-//	CHAR_ARR_DIM1, CHAR_ARR_DIM2,
-//	CON_INT, CON_CHAR,
-//	INT_FUNC, CHAR_FUNC, VOID_FUNC,
-//	PARA_INT, PARA_CHAR
-//};
-
 class SymTableEntry {
 public:
 	SymTableEntry(std::string name_, int cate, int type_, int layer_):
@@ -122,6 +112,8 @@ public:
 
 	int getTypeByName(std::string name);
 	SymTableEntry* getSymByName(std::string name);
+
+	void printSymTable(std::ostream& os);
 
 	// void popSymbol() { symTable.pop_back(); }
 	// SymTableEntry* topSymbol() { return symTable.back(); }

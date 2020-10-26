@@ -81,16 +81,23 @@ bool Parser::cacheContainsSym(TYPE_SYM type)
 
 void Parser::printError(ostream &out)
 {
+    int lastLine = -1;
 #ifdef PRINT_ERROR_MESSAGE
     for (auto &item : this->errorList)
     {
-        out << item.line << ' ' << item.iden << ' ' << item.message << '\n';
+        if (lastLine != item.line) {
+            out << item.line << ' ' << item.iden << ' ' << item.message << '\n';
+            lastLine = item.line;
+        }
     }
 #endif //
 #ifndef PRINT_ERROR_MESSAGE
     for (auto &item : this->errorList)
     {
-        out << item.line << ' ' << item.iden << '\n';
+        if (lastLine != item.line) {
+            out << item.line << ' ' << item.iden << '\n';
+            lastLine = item.line;
+        }
     }
 #endif // !PRINT_ERROR_MESSAGE
 }

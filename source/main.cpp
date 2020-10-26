@@ -8,12 +8,14 @@
 
 int main() {
 	std::ifstream infile("testfile.txt");
-	std::ofstream outfile("output.txt");
-	std::ofstream outfile2("tree.txt");
+	std::ofstream outfile("error.txt");
 	Parser parser(infile);
 	parser.nextSym();
 	SynNode* tree = parser.parse();
-	tree->print(outfile2);
 	parser.printError(outfile);
+#ifdef PRINT_ERROR_MESSAGE
+	std::ofstream outfile2("tree.txt");
+	tree->print(outfile2);
+#endif // PRINT_ERROR_MESSAGE
 	return 0;
 }

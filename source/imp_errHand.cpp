@@ -1,6 +1,7 @@
 ﻿#include <vector>
 #include <string>
 #include <tuple>
+#include <iostream>
 #include "../header/errHand.h"
 
 using namespace std;
@@ -68,4 +69,12 @@ void SymbolTable::popSym(int layer) {
 void SymbolTable::insertSymbolEntry(SymTableEntry* sym) {
 	symTable.push_back(sym);
 	sym->setINDEX(symTable.size() - 1); // set index(pos) of sym
+}
+
+void SymbolTable::printSymTable(ostream& os) {
+	for (auto i : symTable) {
+		os << (i->getINDEX()) << " : layer->" << (i->getLAYER()) <<
+			" name->" << (i->getName()) << " type->" << (i->getTYPE()) <<
+			" cate->" << (i->getTYPE()) << endl;
+	}
 }

@@ -27,11 +27,6 @@ SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_
         {
             node->addChild(new TerNode(symbol));
             i++;
-            if (i > attr_size_inh)
-            {
-                printPos(99965);
-                addErrorMessage(symbol.line, 'n', "一维数组初始化个数不匹配");
-            }
             nextSym();
             int attr_line_tem;
             node->addChild(constP(&attr_temType, &attr_conVal_syn, &attr_line_tem));
@@ -44,9 +39,14 @@ SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_
         {
             printPos(99046);
         }
-        *attr_intLine_syn = symbol.line;
         node->addChild(new TerNode(symbol));
         nextSym();
+        *attr_intLine_syn = symbol.line;
+        if (i != attr_size_inh)
+        {
+            printPos(99965);
+            addErrorMessage(symbol.line, 'n', "数组第一维初始化个数不匹配");
+        }
     }
     else
     {
@@ -76,11 +76,6 @@ SynNode *Parser::doubleArrayConstP
                 *attr_intType_syn = _TYPE_ERROR;
             }
             i++;
-            if (i > attr_size1_inh)
-            {
-                printPos(91651);
-                addErrorMessage(symbol.line, 'n', "二维数组初始化维数不匹配");
-            }
         }
         if (!(symbol.type == TYPE_SYM::RBRACE))
         {
@@ -89,6 +84,11 @@ SynNode *Parser::doubleArrayConstP
         *attr_intLine_syn = symbol.line;
         node->addChild(new TerNode(symbol));
         nextSym();
+        if (i > attr_size1_inh)
+        {
+            printPos(91651);
+            addErrorMessage(symbol.line, 'n', "数组第二维初始化维数不匹配");
+        }
     }
     else
     {
@@ -102,6 +102,7 @@ SynNode *Parser::oneDdeclareP(int *attr_size_syn)
     NonTerNode *node = new NonTerNode(TYPE_NTS::ONED_DEC, false);
     if (symbol.type == TYPE_SYM::LBRACK)
     {
+        int attr_line = symbol.line;
         node->addChild(new TerNode(symbol));
         nextSym();
         if (symbol.type == TYPE_SYM::CHARCON) {
@@ -110,13 +111,15 @@ SynNode *Parser::oneDdeclareP(int *attr_size_syn)
         else {
             node->addChild(unsignedIntP(attr_size_syn));
         }
-        if (!(symbol.type == TYPE_SYM::RBRACK))
+        if (symbol.type == TYPE_SYM::RBRACK)
         {
-            printPos(36536);
-            addErrorMessage(symbol.line, 'm', "一维数组定义无右括号");
+            node->addChild(new TerNode(symbol));
+            nextSym();
         }
-        node->addChild(new TerNode(symbol));
-        nextSym();
+        else {
+            printPos(36536);
+            addErrorMessage(attr_line, 'm', "一维数组定义无右括号");
+        }
     }
     else
     {
@@ -142,6 +145,7 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
         *attr_intType_syn = attr_sym->getTYPE();
         if (symbol.type == TYPE_SYM::LBRACK)
         {
+            attr_intLine_syn = symbol.line;
             node->addChild(new TerNode(symbol));
             int attr_subValue_syn, attr_subType_syn;
             nextSym();
@@ -150,13 +154,15 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
             {
                 addErrorMessage(symbol.line, 'i', "数组下标为字符型");
             }
-            if (!(symbol.type == TYPE_SYM::RBRACK))
+            if (symbol.type == TYPE_SYM::RBRACK)
             {
-                printPos(6516151);
-                addErrorMessage(symbol.line, 'm', "数组元素缺少右中括号");
+                node->addChild(new TerNode(symbol));
+                nextSym();
             }
-            node->addChild(new TerNode(symbol));
-            nextSym();
+            else {
+                printPos(6516151);
+                addErrorMessage(attr_intLine_syn, 'm', "数组元素缺少右中括号");
+            }
             if (symbol.type == TYPE_SYM::LBRACK)
             {
                 node->addChild(new TerNode(symbol));
@@ -167,13 +173,15 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
                 {
                     addErrorMessage(symbol.line, 'i', "数组下标为字符型");
                 }
-                if (!(symbol.type == TYPE_SYM::RBRACK))
+                if (symbol.type == TYPE_SYM::RBRACK)
                 {
-                    printPos(881651);
-                    addErrorMessage(symbol.line, 'm', "二维数组元素缺少右中括号");
+                    node->addChild(new TerNode(symbol));
+                    nextSym();
                 }
-                node->addChild(new TerNode(symbol));
-                nextSym();
+                else {
+                    printPos(881651);
+                    addErrorMessage(attr_intLine_syn, 'm', "二维数组元素缺少右中括号");
+                }
             }
         }
         else
@@ -188,13 +196,13 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
 }
 
 void Parser::semicnP(NonTerNode* node) {
-    if (!(symbol.type == TYPE_SYM::SEMICN))
+    if (symbol.type == TYPE_SYM::SEMICN)
     {
-        addErrorMessage(symbol.line, 'k', "缺少分号");
-        printPos(883833);
-    }
-    else {
         node->addChild(new TerNode(symbol));
         nextSym();
+    }
+    else {
+        addErrorMessage(symbol.line - 1, 'k', "缺少分号");
+        printPos(883833);
     }
 }

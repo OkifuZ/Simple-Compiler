@@ -11,7 +11,7 @@
 #include "synTree.h"
 #include "errHand.h"
 
-#define PRINT_ERROR_MESSAGE
+//#define PRINT_ERROR_MESSAGE
 
 class Parser {
 public:
@@ -35,15 +35,15 @@ public:
     SynNode* unsignedIntP(int*);
     SynNode* intP(int*);
     SynNode* charP(char*);
-    SynNode* constDefP(int layer); //*
+    SynNode* constDefP(int layer, int*); //*
     SynNode* constDecP(int layer); //*
     SynNode* idenP(std::string&, int *);
     SynNode* decHeadP(std::string&, int*, int*);
     SynNode* constP(int*, int*, int*);
     SynNode* varDecP(int layer);
-    SynNode* varDefP(int layer);
-    SynNode* varDerWithInitP(int layer, int type);
-    SynNode* varDerWithoutInitP(int layer, int type);
+    SynNode* varDefP(int layer, int*);
+    SynNode* varDerWithInitP(int layer, int type, int*);
+    SynNode* varDerWithoutInitP(int layer, int type, int*);
     SynNode* typeIdenP(int*);
     SynNode* arguListP(int, int*, FuncSymEntry*);
     SynNode* refuncDefineP(int layer);
@@ -68,7 +68,7 @@ public:
     SynNode* writeSenP(int layer);
     SynNode* returnSenP(int, int, int*);
     SynNode* compareOpP(int*);
-    SynNode* compoundSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* compoundSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum = nullptr);
     SynNode* mainP(int layer);
 
 // programAnalysis nonhighlight
@@ -93,6 +93,8 @@ public:
     }
 
     void addSymbolEntry(SymTableEntry* sym) { symbolTable.insertSymbolEntry(sym); }
+
+    void printSymTable(std::ostream& os) { symbolTable.printSymTable(os); }
 
 // lexical tools
     bool nextSym();
