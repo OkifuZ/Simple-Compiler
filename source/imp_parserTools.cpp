@@ -39,7 +39,7 @@ bool Parser::nextSym()
     this->flushed = (top == pos);
     if (symbol.type == TYPE_SYM::ERROR)
     {
-        addErrorMessage(symbol.line, 'a');
+        addErrorMessage(symbol.line, 'a', "此法错误");
     }
     return !(symbol.type == TYPE_SYM::ENDS || symbol.type == TYPE_SYM::ERROR);
 }
@@ -97,12 +97,16 @@ void Parser::printError(ostream &out)
 int Parser::str2int(std::string s) {
     int ans = 0;
     char c;
+    bool neg = false;
     for (int i = 0; i < s.size(); i++) {
         c = s[i];
-        if (c >= '9' || c <= '0') printPos(88754);
-        ans = ans * 10 + (c - '0');
+        if (c > '9' || c < '0') {
+            printPos(88754);
+            cout << "sefw" << endl;
+        }
+        else ans = ans * 10 + (c - '0');
     }
-    return ans;
+    return neg ? -ans : ans;
 }
 
 char Parser::str2char(std::string s) {

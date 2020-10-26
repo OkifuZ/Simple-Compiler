@@ -59,14 +59,21 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         return TYPE_SYM::INTCON;
     }
     else if (c == '\'') {
+        bool error_ = false;
         c = this->file.get();
         if (c == '+' || c == '-' || c == '*' || c == '/' || isNum(c) || isLetter(c)) {
             token += c;
-            c = this->file.get();
-            if (c == '\'') return TYPE_SYM::CHARCON;
         }
-        printPos(17761);
-        return TYPE_SYM::ERROR;
+        else {
+            error_ = true;
+        }
+        c = this->file.get();
+        if (c != '\'')
+        {
+            printPos(17761);
+            error_ = true;
+        }
+        return error_ ? TYPE_SYM::ERROR : TYPE_SYM::CHARCON;
     }
     else if (c == '"') {
         c = this->file.get();
