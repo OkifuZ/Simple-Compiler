@@ -76,12 +76,19 @@ TYPE_SYM LexicalAnalyzer::getsym(string& token) {
         return error_ ? TYPE_SYM::ERROR : TYPE_SYM::CHARCON;
     }
     else if (c == '"') {
+        int len = 0;
         c = this->file.get();
         while (isASCII(c)) {
+            len++;
             token += c;
             c = this->file.get();
         }
         if (c == '"') {
+            if (len == 0)
+            {
+                printPos(91102);
+                return TYPE_SYM::ERROR;
+            }
             return TYPE_SYM::STRCON;
         }
         printPos(20098);

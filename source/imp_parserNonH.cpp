@@ -131,8 +131,9 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
     NonTerNode* node = new NonTerNode(TYPE_NTS::REFERENCE, false);
     node->addChild(idenP(attr_strName_syn, &attr_intLine_syn));
     SymTableEntry* attr_sym = getEntrySymByName(attr_strName_syn);
+
     if (attr_sym == nullptr) {
-        addErrorMessage(symbol.line, 'c', "引用了未定义的名字");
+        addErrorMessage(symbol.line, 'c', "引用了未定义的名字->"+attr_strName_syn);
     }
     else if (isAssign && attr_sym->getCATE() == _CAT_CONST) {
         addErrorMessage(symbol.line, 'j', "改变常量的值");

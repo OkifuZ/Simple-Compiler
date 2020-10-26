@@ -37,7 +37,7 @@ SymTableEntry* SymbolTable::getSymByName(std::string name) {
 	for (int i = symTable.size() - 1; i >= 0; i--) {
 		string s = symTable[i]->getName();
 		if (strSame(s, name)) {
-			symTable[i];
+			return symTable[i];
 		}
 	}
 	return nullptr;

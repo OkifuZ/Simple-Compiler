@@ -337,6 +337,7 @@ inline SynNode *Parser::varDerWithInitP(int layer, int attr_intType_inh)
 
 inline SynNode *Parser::varDerWithoutInitP(int layer, int attr_intType_inh)
 {
+    //cout << "entered vardefwithoutini" << endl;
     int attr_cate_inh = _CAT_VAR, LAYER = layer, attr_size1_syn, attr_size2_syn;
     int attr_intLine_syn = 0;
     string attr_strNmae_syn;
@@ -359,6 +360,7 @@ inline SynNode *Parser::varDerWithoutInitP(int layer, int attr_intType_inh)
     }
     if (dim == 0)
     {
+        cout << "added "+attr_strNmae_syn << endl;
         addSymbolEntry(new ScalerSymEntry(attr_strNmae_syn, attr_cate_inh, attr_intLine_syn, LAYER));
     }
     else if (dim == 1)
@@ -491,7 +493,7 @@ inline SynNode *Parser::typeIdenP(int* attr_intType_syn)
         node->addChild(new TerNode(symbol));
         nextSym();
     }
-    {
+    else {
         printPos(51749);
     }
     return node;
@@ -1435,21 +1437,20 @@ inline SynNode *Parser::mainP(int layer)
     nextSym();
     if (!(symbol.type == TYPE_SYM::LBRACE))
     {
-        node->addChild(new TerNode(symbol));
-        nextSym();
-        int retNum = 0;
-        node->addChild(compoundSenP(LAYER + 1, true, _TYPE_VOID, &retNum));
-        if (!(symbol.type == TYPE_SYM::RBRACE))
-        {
-            printPos(158);
-        }
-        node->addChild(new TerNode(symbol));
-        nextSym();
-        popSym_CurLayer(LAYER + 1);
-    }
-    else {
         printPos(987);
     }
+    node->addChild(new TerNode(symbol));
+    nextSym();
+    int retNum = 0;
+    node->addChild(compoundSenP(LAYER + 1, true, _TYPE_VOID, &retNum));
+    if (!(symbol.type == TYPE_SYM::RBRACE))
+    {
+        printPos(158);
+    }
+    node->addChild(new TerNode(symbol));
+    nextSym();
+    popSym_CurLayer(LAYER + 1);
+    
     return node;
 }
 

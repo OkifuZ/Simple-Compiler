@@ -39,7 +39,7 @@ bool Parser::nextSym()
     this->flushed = (top == pos);
     if (symbol.type == TYPE_SYM::ERROR)
     {
-        addErrorMessage(symbol.line, 'a', "此法错误");
+        addErrorMessage(symbol.line, 'a', "词法错误");
     }
     return !(symbol.type == TYPE_SYM::ENDS || symbol.type == TYPE_SYM::ERROR);
 }
