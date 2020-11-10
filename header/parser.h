@@ -10,13 +10,18 @@
 #include "lexical.h"
 #include "synTree.h"
 #include "errHand.h"
+#include "tool.h"
+#include "globalRec.h"
+#include "InterCode.h"
 
-//#define PRINT_ERROR_MESSAGE
+
 
 class Parser {
 public:
     Parser(std::istream& file) :
-        lexicalAnalyzer(LexicalAnalyzer(file)) {}
+        lexicalAnalyzer(LexicalAnalyzer(file)) {
+        this->intermediate = new Intermediate(&envTable);
+    }
 
     SynNode* parse();
 
@@ -35,74 +40,81 @@ public:
     SynNode* unsignedIntP(int*);
     SynNode* intP(int*);
     SynNode* charP(char*);
-    SynNode* constDefP(int layer, int*); //*
-    SynNode* constDecP(int layer); //*
+    SynNode* constDefP(int*); //*
+    SynNode* constDecP(); //*
     SynNode* idenP(std::string&, int *);
     SynNode* decHeadP(std::string&, int*, int*);
     SynNode* constP(int*, int*, int*);
-    SynNode* varDecP(int layer);
-    SynNode* varDefP(int layer, int*);
-    SynNode* varDerWithInitP(int layer, int type, int*);
-    SynNode* varDerWithoutInitP(int layer, int type, int*);
+    SynNode* varDecP();
+    SynNode* varDefP(int*);
+    SynNode* varDerWithInitP(int type, int*);
+    SynNode* varDerWithoutInitP(int type, int*);
     SynNode* typeIdenP(int*);
-    SynNode* arguListP(int, int*, FuncSymEntry*);
-    SynNode* refuncDefineP(int layer);
-    SynNode* nonrefuncDefineP(int layer);
-    SynNode* termP(int layer, int*, int*);
-    SynNode* factorP(int layer, int*, int*);
-    SynNode* expressionP(int layer, int*, int*);
-    SynNode* callFuncSenP(int layer, int*, int*);
-    SynNode* valueArgueListP(int layer, FuncSymEntry* func);
-    SynNode* assignSenP(int layer);
-    SynNode* sentenceP(int layer, bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* sentenceListP(int layer, bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* ifelseSenP(int layer, bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* conditionP(int, bool*);
-    SynNode* loopSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* arguListP(int*, FuncSymEntry*);
+    SynNode* refuncDefineP();
+    SynNode* nonrefuncDefineP();
+    SynNode* termP(int*, bool*, std::string&);
+    SynNode* factorP(int*, bool*, std::string&);
+    SynNode* expressionP(int*, bool*, std::string&);
+    SynNode* callFuncSenP(int*);
+    SynNode* valueArgueListP(FuncSymEntry* func);
+    SynNode* assignSenP();
+    SynNode* sentenceP(bool inFunc, int type = _TYPE_ERROR, int* retNum=0, bool inMain = false);
+    SynNode* sentenceListP(bool inFunc, int type = _TYPE_ERROR, int* retNum=0, bool inMain = false);
+    SynNode* ifelseSenP(bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* conditionP();
+    SynNode* loopSenP(bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
     SynNode* stepLengthP(int*);
-    SynNode* switchSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* caseListP(int layer, int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* caseSenP(int layer, int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* defaultP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* readSenP(int layer);
-    SynNode* writeSenP(int layer);
-    SynNode* returnSenP(int, int, int*);
+    SynNode* switchSenP(bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* caseListP(int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* caseSenP(int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* defaultP(bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* readSenP();
+    SynNode* writeSenP();
+    SynNode* returnSenP(int, int*, bool);
     SynNode* compareOpP(int*);
-    SynNode* compoundSenP(int layer, bool isFunc, int type = _TYPE_ERROR, int* retNum = nullptr);
-    SynNode* mainP(int layer);
+    SynNode* compoundSenP(bool isFunc, int type = _TYPE_ERROR, int* retNum = nullptr, bool inMain = false);
+    SynNode* mainP();
 
 // programAnalysis nonhighlight
     SynNode* arrayConstP(int, int*, int*); // {}
     SynNode* doubleArrayConstP(int, int, int*, int*); // {{}}
     SynNode* oneDdeclareP(int* ); // [x]
-    SynNode* referenceP(int layer, int*, int*, bool, int);
+    SynNode* referenceP(int*, bool, std::string&, bool*);
     void semicnP(NonTerNode*);
 
 
 // symbol table
-    bool checkDuplicate(std::string name, int layer) { return symbolTable.duplicateName(name, layer); }
+
+    EnvTable envTable;
+    
+    bool checkDuplicate(std::string name) { return envTable.checkDuplicate(name); }
 
     FuncSymEntry* getFUNC_CALL(std::string name);
 
-    SymTableEntry* getEntrySymByName(std::string name) { return symbolTable.getSymByName(name); }
-    int getEntryTypeByName(std::string name) { return symbolTable.getTypeByName(name); }
-    
+    SymTableEntry* getEntrySymByName(std::string name) { return envTable.getSymByName(name); }
 
-    void popSym_CurLayer(int layer) {
-        symbolTable.popSym(layer);
+    void popCurTable() {
+        envTable.popTable();
     }
 
-    void addSymbolEntry(SymTableEntry* sym) { symbolTable.insertSymbolEntry(sym); }
+    void pushNewTable(std::string funcName) {
+        envTable.addTable(funcName);
+    }
 
-    void printSymTable(std::ostream& os) { symbolTable.printSymTable(os); }
+    int offset = 0;
+
+    void addSymbolEntry(SymTableEntry* sym) { 
+        envTable.top->insertSymbolEntry(sym);
+    }
+
 
 // lexical tools
     bool nextSym();
     void preReadSym(int time = 1);
     void flushPreRead();
     bool cacheContainsSym(TYPE_SYM type);
-    int str2int(std::string s);
-    char str2char(std::string s);
+    int getPreLine();
 
 // error handling
     void printError(std::ostream& out);
@@ -111,12 +123,28 @@ public:
         errorList.push_back(ErrorMessage(line, iden, mess));
     }
 
+
+    
+
+// code gene
+    void addString2Global(std::string s) {
+        globalStringList.push_back(s);
+    }
+
+    void printInterCode(std::ostream& os) {
+        intermediate->printInterCode(os);
+    }
+
+    std::vector<std::string> globalStringList;
+    Intermediate* intermediate;
+
+
+    
+
 private:
     bool flushed = true;
     
-    SymbolTable symbolTable;
     std::vector<ErrorMessage> errorList;
-
 
 };
 

@@ -7,9 +7,6 @@
 #include <vector>
 
 
-void printPos(int i);
-
-
 enum class TYPE_SYM{OTHERS = -3, ERROR = -2, ENDS = -1, IDENFR = 0, INTCON, CHARCON, STRCON, CONSTTK,
           INTTK, CHARTK, VOIDTK, MAINTK, IFTK, ELSETK,
           SWITCHTK, CASETK, DEFAULTTK, WHILETK, FORTK,
