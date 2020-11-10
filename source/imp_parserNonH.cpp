@@ -128,13 +128,13 @@ SynNode *Parser::oneDdeclareP(int *attr_size_syn)
     return node;
 }
 
-SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_syn, bool isAssign, int attr_assignVal_inh=0) {
+SynNode* Parser::referenceP(int* attr_intType_syn, bool isAssign, string& name, bool* isScaler) {
     string attr_strName_syn;
-    int attr_intLine_syn, LAYER = layer;
+    int attr_intLine_syn;
     NonTerNode* node = new NonTerNode(TYPE_NTS::REFERENCE, false);
     node->addChild(idenP(attr_strName_syn, &attr_intLine_syn));
     SymTableEntry* attr_sym = getEntrySymByName(attr_strName_syn);
-
+    name = attr_strName_syn;
     if (attr_sym == nullptr) {
         addErrorMessage(symbol.line, 'c', "引用了未定义的名字->"+attr_strName_syn);
     }
@@ -149,7 +149,9 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
             node->addChild(new TerNode(symbol));
             int attr_subValue_syn, attr_subType_syn;
             nextSym();
-            node->addChild(expressionP(LAYER, &attr_subType_syn, &attr_subValue_syn)); 
+            string temVar1;
+            bool isCon;
+            node->addChild(expressionP(&attr_subType_syn, &isCon, temVar1)); 
             if (attr_subType_syn == _TYPE_CHAR)
             {
                 addErrorMessage(symbol.line, 'i', "数组下标为字符型");
@@ -168,7 +170,9 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
                 node->addChild(new TerNode(symbol));
                 int attr_subValue_syn, attr_subType_syn;
                 nextSym();
-                node->addChild(expressionP(LAYER, &attr_subType_syn, &attr_subValue_syn)); 
+                string temVar2;
+                bool isCon;
+                node->addChild(expressionP(&attr_subType_syn, &isCon, temVar2)); 
                 if (attr_subType_syn == _TYPE_CHAR)
                 {
                     addErrorMessage(symbol.line, 'i', "数组下标为字符型");
@@ -186,11 +190,9 @@ SynNode* Parser::referenceP(int layer, int* attr_intType_syn, int* attr_value_sy
         }
         else
         {
+            *isScaler = true;
             // just var scaler
         }
-    }
-    if (attr_value_syn != nullptr) {
-        *attr_value_syn = 0; // so for no access to memory
     }
     return node;
 }

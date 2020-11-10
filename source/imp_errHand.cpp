@@ -23,11 +23,10 @@ bool strSame(string a, string b) {
 	return true;
 }
 
-bool SymbolTable::duplicateName(string name, int layer) {
+bool SymbolTable::duplicateName(string name) {
 	for (int i = symTable.size() - 1; i >= 0; i--) {
 		string s = symTable[i]->getName();
-		int la = symTable[i]->getLAYER();
-		if (layer == la && strSame(s, name)) {
+		if (strSame(s, name)) {
 			return true;
 		}
 	}
@@ -35,6 +34,7 @@ bool SymbolTable::duplicateName(string name, int layer) {
 }
 
 SymTableEntry* SymbolTable::getSymByName(std::string name) {
+
 	for (int i = symTable.size() - 1; i >= 0; i--) {
 		string s = symTable[i]->getName();
 		if (strSame(s, name)) {
@@ -44,28 +44,6 @@ SymTableEntry* SymbolTable::getSymByName(std::string name) {
 	return nullptr;
 }
 
-int SymbolTable::getTypeByName(string name) {
-	for (int i = symTable.size() - 1; i >= 0; i--) {
-		string s = symTable[i]->getName();
-		if (strSame(s, name)) {
-			return symTable[i]->getTYPE();
-		}
-	}
-	return _TYPE_ERROR;
-}
-
-void SymbolTable::popSym(int layer) {
-	int len = symTable.size();
-	for (int i = len - 1; i >= 0; i--) {
-		if (symTable[i]->getLAYER() < layer) {
-			break;
-		}
-		if (symTable[i]->getLAYER() == layer) {
-			symTable.pop_back();
-		}
-	}
-}
-
 void SymbolTable::insertSymbolEntry(SymTableEntry* sym) {
 	symTable.push_back(sym);
 	sym->setINDEX(symTable.size() - 1); // set index(pos) of sym
@@ -73,8 +51,8 @@ void SymbolTable::insertSymbolEntry(SymTableEntry* sym) {
 
 void SymbolTable::printSymTable(ostream& os) {
 	for (auto i : symTable) {
-		os << (i->getINDEX()) << " : layer->" << (i->getLAYER()) <<
+		os << (i->getINDEX()) << " : function->" << funcName <<
 			" name->" << (i->getName()) << " type->" << (i->getTYPE()) <<
-			" cate->" << (i->getTYPE()) << endl;
+			" cate->" << (i->getTYPE()) << " offset->" << (i->getOffset()) << endl;
 	}
 }

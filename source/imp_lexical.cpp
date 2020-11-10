@@ -232,11 +232,6 @@ bool LexicalAnalyzer::isASCII(const char& c) {
     return (c <= 126 && c >= 35) || c == 32 || c == 33;
 }
 
-void printPos(int i){
-#ifdef PRINT_ERROR_MESSAGE
-    cout << "error!!!" << " " << i << endl;
-#endif // PRINT_ERROR_MESSAGE
-}
 
 /*END SOME TOOLS*/
 

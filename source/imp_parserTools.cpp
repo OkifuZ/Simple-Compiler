@@ -63,6 +63,11 @@ void Parser::preReadSym(int time)
     }
 }
 
+int Parser::getPreLine() {
+    int p = pos >= 2? (pos-2) : 0;
+    return record[p].line;
+}
+
 void Parser::flushPreRead()
 {
     top = pos;
@@ -102,25 +107,6 @@ void Parser::printError(ostream &out)
 #endif // !PRINT_ERROR_MESSAGE
 }
 
-int Parser::str2int(std::string s) {
-    int ans = 0;
-    char c;
-    bool neg = false;
-    for (int i = 0; i < s.size(); i++) {
-        c = s[i];
-        if (c > '9' || c < '0') {
-            printPos(88754);
-            cout << "sefw" << endl;
-        }
-        else ans = ans * 10 + (c - '0');
-    }
-    return neg ? -ans : ans;
-}
-
-char Parser::str2char(std::string s) {
-    if (s.size() > 1) printPos(8069);
-    return s[0];
-}
 
 FuncSymEntry* Parser::getFUNC_CALL(std::string name) {
     SymTableEntry* sym = getEntrySymByName(name);
