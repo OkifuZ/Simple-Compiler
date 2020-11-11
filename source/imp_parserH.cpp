@@ -723,6 +723,7 @@ SynNode *Parser::refuncDefineP()
         addErrorMessage(attr_line, 'b', "有返回值函数名字重复定义");
     }
     envTable.addTable(attr_strName);
+    intermediate->addInterCode(INT_OP::FUNC, "", _INV, attr_strName, _INV, false, "", _INV, false);
     FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_cate, attr_type, 0);
     addSymbolEntry(symFUNC);
     attr_line = symbol.line;

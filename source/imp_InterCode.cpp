@@ -22,6 +22,10 @@ void Intermediate::addInterCode(INT_OP op, string z, int z_type,
 void Intermediate::printInterCode(ostream& os) {
     for (auto line : this->interCodeList) {
         os << this->INT_OP_STR[static_cast<int>(line->op)] << " ";
+        if (line->op == INT_OP::FUNC) {
+            os << ": \n";
+            continue;
+        }
         if (line->z->isValid) {
             os << line->z->name << " ";
         }

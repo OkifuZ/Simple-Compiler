@@ -9,7 +9,6 @@
 #define _CAT_VAR 0
 #define _CAT_CONST 1
 #define _CAT_FUNC 2
-#define _CAT_CON 3
 
 #define _TYPE_ERROR -2
 #define _TYPE_VOID -1

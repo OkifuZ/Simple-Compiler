@@ -9,7 +9,7 @@
 #include "errHand.h"
 #include "tool.h"
 
-enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, SCAN, PRINT, EXIT};
+enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, SCAN, PRINT, EXIT, FUNC};
 
 class InterCodeEntry;
 class InterOprand;
@@ -33,7 +33,7 @@ public:
 private:
     int temCount = 0;
     EnvTable* env;
-    std::vector<std::string> INT_OP_STR = {"ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "EXIT"};
+    std::vector<std::string> INT_OP_STR = {"ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "EXIT", "FUNC"};
 
 };
 
@@ -44,11 +44,11 @@ public:
     int type;
     bool isCon;
     bool isValid;
-    bool isImmediate;
+    bool isIntermediate;
 
     InterOprand(std::string name_, int type_, bool isCon_) : name(name_), type(type_), isCon(isCon_) {
         isValid = !(name == "");
-        isImmediate = (name[0] == '#');
+        isIntermediate = (name[0] == '#');
     }
 
     int getConstInt() {
@@ -64,36 +64,6 @@ public:
     }
 
 };
-
-
-// class InterOprand {
-// public:
-//     std::string name;
-//     SymTableEntry* attr;
-//     bool isIntermediate;
-//     bool isImmediate;
-//     bool isValid;
-//     bool isStrCon;
-
-//     InterOprand(std::string name_, SymTableEntry* attr_) : name(name_), attr(attr_) {
-//         isValid = !(name == "");
-//         if (attr == nullptr) {
-//             isIntermediate = name_[0] == '#';
-//             isImmediate = isIntstr(name_);
-//             isStrCon = !(isIntermediate || isImmediate);
-//         } 
-//     }
-
-//     int getConstValue() {
-//         if (name[0] == '$') {
-//             return str2int(name.substr(1, name.size()));
-//         }
-//         else if (name[0] == '^') {
-//             return static_cast<int>(str2char(name.substr(1, name.size())));
-//         }
-//     }
-
-// };
 
 class InterCodeEntry {
 public:
