@@ -23,7 +23,7 @@ void Intermediate::printInterCode(ostream& os) {
     for (auto line : this->interCodeList) {
         os << this->INT_OP_STR[static_cast<int>(line->op)] << " ";
         if (line->op == INT_OP::FUNC) {
-            os << ": \n";
+            os << ": " << line->x->name << "\n";
             continue;
         }
         if (line->z->isValid) {

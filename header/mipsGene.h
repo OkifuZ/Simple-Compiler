@@ -6,10 +6,12 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include "InterCode.h"
 #include "tool.h"
 #include "parser.h"
 #include "errHand.h"
+#include "register.h"
 
 enum class MIPS_INS{
     ERROR=-1, ADDU=0, ADDIU, SUBU, LI, LA, MOVE, 
@@ -17,7 +19,7 @@ enum class MIPS_INS{
     J,
     LW, SW,
     SYSCALL, 
-    DATASEG, TEXTSEG, STRINGSEG, LABEL
+    DATASEG, TEXTSEG, STRINGSEG, SPACE, LABEL
 };
 
 
@@ -33,36 +35,6 @@ public:
         op(op_), x(x_), y(y_), z(z_), immediate(immediate_), hasImmediate(hasImmediate_) {}
 };
 
-class RegistorPool {
-public:
-    std::vector<std::string> globalRegister = std::vector<std::string>(8, "");
-    std::vector<std::string> temRegister = std::vector<std::string>(10, "");
-    std::vector<std::string> vRegister = std::vector<std::string>(2, "");
-    std::vector<std::string> aRegister = std::vector<std::string>(4, "");
-
-    std::string getEmptyTemReg() {
-        for (int i = 0; i < 8; i++) {
-            if (temRegister[i] == "") {
-                return "$"+int2str(i);
-            }
-        }
-        return "";
-    }
-
-    std::string getTemRegByName(std::string name) {
-        for (int i = 0; i < 8; i++) {
-            if (temRegister[i] == name) {
-                return "$"+int2str(i);
-            }
-        }
-        return "";
-    }
-
-    std::string graspTemReg() {
-        return "$t0";
-    }
-
-};
 
 
 class MipsGenerator {
@@ -71,15 +43,39 @@ public:
         interCodeList = p->intermediate->interCodeList;
         stringList = p->globalStringList;
         env = p->envTable;
+
+        for (int i = 0; i < 8; i++) {
+            globalRegister.push_back(Register("$s"+int2str(i)));
+        }
+        for (int i = 0; i < 10; i++) {
+            temRegister.push_back(Register("$t"+int2str(i)));
+        }
+        for (int i = 0; i < 4; i++) {
+            aRegister.push_back(Register("$a"+int2str(i)));
+        }
+        for (int i = 0; i < 2; i++) {
+            vRegister.push_back(Register("$v"+int2str(i)));
+        }
+
     }
 
     void GeneMipsCode();
 
     void printMipsCode(std::ostream& os);
 
+    SymTableEntry* getSymByName(std::string name);
+
+    bool checkIsConst(std::string name, int* value);
+
+
+private:
     void addEntry(MipsEntry* e) { mipsCodeList.push_back(e); }
 
-    std::string getRegister(std::string varName);
+    std::string getRegister(std::string varName, bool load);
+
+    void pushStack(std::string reg);
+
+    void loadValue(std::string reg, int offset);
 
     int getStringIndex(std::string s) {
         for (int i = 0; i < stringList.size(); i++) {
@@ -90,13 +86,61 @@ public:
         return -1;
     }
 
-private:
+
+    std::string getEmptyTemReg() {
+        for (int i = 0; i < 10; i++) {
+            if (!temRegister[i].isBusyL && !temRegister[i].isBusyT) {
+                return "$t"+int2str(i);
+            }
+        }
+        return "";
+    }
+
+    std::string getTemRegByName(std::string name) {
+        for (int i = 0; i < 10; i++) {
+            if (temRegister[i].varName == name) {
+                return "$t"+int2str(i);
+            }
+        }
+        return "";
+    }
+
+    std::string getGloRegByName(std::string name) {
+        for (int i = 0; i < 8; i++) {
+            if (globalRegister[i].varName == name) {
+                return "$s"+int2str(i);
+            }
+        }
+        return "";
+    }
+    int prevPos = 0;
+    std::string graspTemReg();
+
+    void storeBack(std::string reg);
+    void loadValue(std::string name, std::string reg);
+    int varInTemRegister(std::string name);
+    int varInGloRegister(std::string name);
+
+    void assignGloReg2LocVar(SymbolTable* sym);
+    std::string getNameByReg(std::string reg);
+
+    std::string curFuncName = "global";
+    int topOffset = 0; // always >= 0
+
     std::vector<InterCodeEntry*> interCodeList;
     std::vector<MipsEntry*> mipsCodeList;
     std::vector<std::string> stringList;
-    RegistorPool regPool;
     EnvTable env;
-    std::map<std::string, int> temRegMap;
+    std::map<std::string, int> temVarOffsetMap; // temVarName : offset
+
+    std::vector<Register> globalRegister;
+    std::vector<Register> temRegister;
+    std::vector<Register> vRegister;
+    std::vector<Register> aRegister;
+    
+
+
+    std::set<std::string> usingInCurInter;
 
 };
 

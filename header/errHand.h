@@ -33,7 +33,6 @@ public:
 	virtual int getOffset() { return offset; }
 	virtual void setAssigned() { hasValueorAddr = true; }
 
-protected:
 	int category = 0;
 	// 0 -> var, 1 -> const, 2 -> func
 	int type = 0;
@@ -42,6 +41,9 @@ protected:
 	int INDEX_TABLE = -1;
 	int offset = -1;
 	bool hasValueorAddr = false;
+	bool isGlobal = false;
+
+protected:
 };
 
 
@@ -109,6 +111,7 @@ public:
 	std::string funcName;
 	std::vector<SymbolTable*> children;
 	SymbolTable* father;
+	
 
 	SymbolTable(std::string name) : funcName(name) {}
 
@@ -118,6 +121,8 @@ public:
 	SymTableEntry* getSymByName(std::string name);
 
 	void printSymTable(std::ostream& os);
+
+	int calculateOffset();
 
 	SymbolTable* findTableByName(std::string name) {
 		if (funcName == name) {
@@ -135,8 +140,8 @@ public:
 	}
 
 	
-private:
 	std::vector<SymTableEntry*> symTable;
+private:
 	
 };
 

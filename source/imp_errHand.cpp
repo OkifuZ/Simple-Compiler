@@ -47,6 +47,7 @@ SymTableEntry* SymbolTable::getSymByName(std::string name) {
 void SymbolTable::insertSymbolEntry(SymTableEntry* sym) {
 	symTable.push_back(sym);
 	sym->setINDEX(symTable.size() - 1); // set index(pos) of sym
+	sym->isGlobal = (funcName == "global");
 }
 
 void SymbolTable::printSymTable(ostream& os) {
@@ -55,4 +56,15 @@ void SymbolTable::printSymTable(ostream& os) {
 			" name->" << (i->getName()) << " type->" << (i->getTYPE()) <<
 			" cate->" << (i->getTYPE()) << " offset->" << (i->getOffset()) << endl;
 	}
+}
+
+int SymbolTable::calculateOffset() { // 0, 4, 8, 12, ...
+	int offset = 0;
+	for (auto iter: symTable) {
+		if (iter->category != _CAT_CONST && iter->category != _CAT_FUNC) {
+			iter->offset = offset;
+			offset += 4;
+		}
+	}
+	return offset;
 }

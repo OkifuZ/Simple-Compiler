@@ -16,6 +16,7 @@
 
 
 
+
 class Parser {
 public:
     Parser(std::istream& file) :
@@ -137,7 +138,7 @@ public:
 
     std::vector<std::string> globalStringList;
     Intermediate* intermediate;
-
+    
 
     
 

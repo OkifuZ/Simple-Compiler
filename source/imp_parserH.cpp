@@ -375,6 +375,7 @@ inline SynNode *Parser::varDerWithoutInitP(int attr_intType_inh, int* attr_lastL
     }
     if (dim == 0)
     {
+        cout << attr_strNmae_syn << endl;
         addSymbolEntry(new ScalerSymEntry(attr_strNmae_syn, attr_cate_inh, attr_intType_inh));
     }
     else if (dim == 1)
@@ -769,6 +770,8 @@ SynNode *Parser::refuncDefineP()
         printPos(91415);
     }
     envTable.popTable();
+    intermediate->addInterCode(INT_OP::ENDFUNC, "", _INV, attr_strName, _INV, false, "", _INV, false);
+
     return node;
 }
 
@@ -826,6 +829,7 @@ SynNode *Parser::nonrefuncDefineP()
             printPos(9842);
         }
         envTable.popTable();
+        intermediate->addInterCode(INT_OP::ENDFUNC, "", _INV, attr_strName, _INV, false, "", _INV, false);
     }
     else
     {
@@ -1366,8 +1370,10 @@ inline SynNode *Parser::writeSenP()
                     string temVar;
                     bool isCon;
                     node->addChild(expressionP(&attr_type, &isCon, temVar));
-                    cout << temVar << endl;
                     intermediate->addInterCode(INT_OP::PRINT, "", _INV, attr_str, _TYPE_STR, true, temVar, attr_type, isCon);
+                }
+                else {
+                    intermediate->addInterCode(INT_OP::PRINT, "", _INV, attr_str, _TYPE_STR, true, "", _INV, false);
                 }
             }
             else
@@ -1375,8 +1381,7 @@ inline SynNode *Parser::writeSenP()
                 string temVar;
                 bool isCon;
                 node->addChild(expressionP(&attr_type, &isCon, temVar));
-                cout << temVar << endl;
-                intermediate->addInterCode(INT_OP::PRINT, "", _INV, "", _INV, false, temVar, attr_type, false);
+                intermediate->addInterCode(INT_OP::PRINT, "", _INV, "", _INV, false, temVar, attr_type, isCon);
             }
             if (symbol.type == TYPE_SYM::RPARENT)
             {
@@ -1578,6 +1583,7 @@ inline SynNode *Parser::mainP()
         printPos(525);
     node->addChild(new TerNode(symbol));
     nextSym();
+    intermediate->addInterCode(INT_OP::FUNC, "", _INV, "main", _INV, false, "", _INV, false);
     if (symbol.type == TYPE_SYM::LPARENT) {
         attr_line = symbol.line;
     }
@@ -1610,7 +1616,7 @@ inline SynNode *Parser::mainP()
     node->addChild(new TerNode(symbol));
     nextSym();
     envTable.popTable();
-    
+    intermediate->addInterCode(INT_OP::ENDFUNC, "", _INV, "main", _INV, false, "", _INV, false);
     return node;
 }
 

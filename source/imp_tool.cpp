@@ -9,8 +9,19 @@ using namespace std;
 int str2int(std::string s) {
     int ans = 0;
     char c;
+    int i;
     bool neg = false;
-    for (int i = 0; i < s.size(); i++) {
+    if (s[0]=='-') {
+        neg = true;
+        i = 1;
+    }
+    else if (s[0] == '+') {
+        i = 1;
+    }
+    else {
+        i = 0;
+    }
+    for (; i < s.size(); i++) {
         c = s[i];
         if (c > '9' || c < '0') {
             printPos(88754);
@@ -39,7 +50,14 @@ void printPos(int i){
 }
 
 bool isIntstr(string s) {
-    for (int i = 0; i < s.size(); i++) {
+    int i;
+    if (s[0] == '-' || s[0] == '+') {
+        i = 1;
+    }
+    else {
+        i = 0;
+    }
+    for (; i < s.size(); i++) {
         if (s[i] > '9' || s[i] < '0') {
             if (i == 0 && (s[i] == '+' || s[i] == '-')) {
                 // pass

@@ -9,7 +9,7 @@
 #include "errHand.h"
 #include "tool.h"
 
-enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, SCAN, PRINT, EXIT, FUNC};
+enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, SCAN, PRINT, J, EXIT, FUNC, ENDFUNC};
 
 class InterCodeEntry;
 class InterOprand;
@@ -33,7 +33,7 @@ public:
 private:
     int temCount = 0;
     EnvTable* env;
-    std::vector<std::string> INT_OP_STR = {"ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "EXIT", "FUNC"};
+    std::vector<std::string> INT_OP_STR = {"ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC"};
 
 };
 
@@ -55,12 +55,14 @@ public:
         if (isCon && type == _TYPE_INT) {
             return str2int(name);
         } 
+        return -1;
     }
 
     char getConstChar() {
         if (isCon && type == _TYPE_CHAR) {
             return static_cast<char>(str2int(name));
         }
+        return '\0';
     }
 
 };
