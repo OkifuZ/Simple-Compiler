@@ -375,7 +375,6 @@ inline SynNode *Parser::varDerWithoutInitP(int attr_intType_inh, int* attr_lastL
     }
     if (dim == 0)
     {
-        cout << attr_strNmae_syn << endl;
         addSymbolEntry(new ScalerSymEntry(attr_strNmae_syn, attr_cate_inh, attr_intType_inh));
     }
     else if (dim == 1)

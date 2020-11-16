@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include "../header/mipsGene.h"
 #include "../header/tool.h"
 #include "../header/InterCode.h"
@@ -121,14 +122,14 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
         string varName = temRegister[ind].varName;
         if (varName[0] == '#'  && temRegister[ind].isBusyT) { // tem Var
             if (temVarOffsetMap.find(varName) != temVarOffsetMap.end()) { // tem var has memory
-                int offset = -temVarOffsetMap[varName] - 4;
+                int offset = -temVarOffsetMap[varName];
                 addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", offset, true));
             }
             else { // tem var has no memory, allocate and store it
                 addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
                 addEntry(new MipsEntry(MIPS_INS::SW, regName, "$sp", "", 0, true));
-                temVarOffsetMap.insert(make_pair(varName, topOffset));
                 topOffset += 4;
+                temVarOffsetMap.insert(make_pair(varName, topOffset));
             }
         } 
         else if (temRegister[ind].isBusyL) { // local var or globa; var
@@ -138,7 +139,7 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
                 addEntry(new MipsEntry(MIPS_INS::SW, regName, "", "globalData", offset, true));
             }
             else { // local var
-                int offset = -sym->offset - 4;
+                int offset = -sym->offset;
                 addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", offset, true));
             }
         }
@@ -147,7 +148,7 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
     else if (regName[1] == 's') {// global reg
         string varName = globalRegister[ind].varName;
         SymTableEntry* sym = getSymByName(varName);
-        int offset = -sym->offset - 4;
+        int offset = -sym->offset;
         addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", offset, true));
         globalRegister[ind].setFree();
     }
@@ -156,7 +157,7 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
 void MipsGenerator::loadValue(string name, string reg) {
     if (name[0] == '#') { // tem var
         if (temVarOffsetMap.find(name) != temVarOffsetMap.end()) {
-            int offset = -temVarOffsetMap[name] - 4;
+            int offset = -temVarOffsetMap[name];
             addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", offset, true));
         }
     }
@@ -168,7 +169,7 @@ void MipsGenerator::loadValue(string name, string reg) {
                 addEntry(new MipsEntry(MIPS_INS::LW, reg, "", "globalData", offset, true));
             }
             else { // local var
-                int offset = -(sym->offset) - 4; // stack goes downward
+                int offset = -(sym->offset); // stack goes downward
                 addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", offset, true));
             }
         }
@@ -221,7 +222,7 @@ void MipsGenerator::assignGloReg2LocVar(SymbolTable* symTab) {
     }
     topOffset += offset;
     if (symTab->symTable.size() > 0) {
-        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", -topOffset-4, true));
+        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", topOffset, true));
     }
     // TODO SUB SP
 }
@@ -245,7 +246,44 @@ void MipsGenerator::GeneMipsCode() {
     // code
     for (int i = 0; i < interCodeList.size(); i++) {
         InterCodeEntry* inter = interCodeList[i];
-        
+        if (true) {
+            InterCodeEntry* line = inter;
+            stringstream os;
+            std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC" };
+            os << INT_OP_STR[static_cast<int>(line->op)] << " ";
+            if (line->op == INT_OP::FUNC) {
+                os << ": " << line->x->name << "\n";
+            }
+            else {
+                if (line->z->isValid) {
+                    os << line->z->name << " ";
+                }
+                if (line->x->isValid) {
+                    if (line->x->isCon && line->x->type == _TYPE_CHAR) {
+                        os << "\'" << line->x->getConstChar() << "\' ";
+                    }
+                    else if (line->x->isCon && line->x->type == _TYPE_STR) {
+                        os << "\"" << line->x->name << "\" ";
+                    }
+                    else {
+                        os << line->x->name << " ";
+                    }
+                }
+                if (line->y->isValid) {
+                    if (line->y->isCon && line->y->type == _TYPE_CHAR) {
+                        os << "\'" << line->y->getConstChar() << "\' ";
+                    }
+                    else if (line->y->isCon && line->y->type == _TYPE_STR) {
+                        os << "\"" << line->y->name << "\" ";
+                    }
+                    else {
+                        os << line->y->name << " ";
+                    }
+                }
+            }
+            string s = os.str();
+            addEntry(new MipsEntry(MIPS_INS::DEBUG, "", s, "", 0, false));
+        }
         string zr="", xr="", yr="";
         switch(inter->op) {
             case INT_OP::FUNC: {
@@ -480,6 +518,9 @@ void MipsGenerator::GeneMipsCode() {
 void MipsGenerator::printMipsCode(ostream& os) {
     for (auto line : this->mipsCodeList) {
         switch(line->op) {
+            case MIPS_INS::DEBUG:
+                os << "\n# " << line->x << "\n";
+                break;
             case MIPS_INS::ADDU:
                 os << "add" << " " << line->z << ", " << line->x << ", " << line->y << "\n";
                 break;
