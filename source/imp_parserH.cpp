@@ -294,7 +294,7 @@ inline SynNode *Parser::varDerWithInitP(int attr_intType_inh, int* attr_lastLine
         intermediate->addInterCode(INT_OP::ASSIGN, attr_strNmae_syn, attr_intType_inh, int2str(attr_value_syn), attr_conType_syn, true, "", _INV, false);
         sym->setAssigned();
     }
-    else if (symbol.type == TYPE_SYM::LBRACK)
+    else if (symbol.type == TYPE_SYM::LBRACK) // ARRAY
     {
         node->addChild(oneDdeclareP(&attr_size1_syn));
         if (symbol.type == TYPE_SYM::ASSIGN)
@@ -362,7 +362,7 @@ inline SynNode *Parser::varDerWithoutInitP(int attr_intType_inh, int* attr_lastL
         addErrorMessage(attr_intLine_syn, 'b', "无初始化变量定义时名字重定义");
     }
     int dim = 0;
-    if (symbol.type == TYPE_SYM::LBRACK)
+    if (symbol.type == TYPE_SYM::LBRACK) // ARRAY
     {
         *attr_lastLine_syn = symbol.line;
         dim++;

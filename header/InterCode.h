@@ -24,6 +24,12 @@ public:
         std::string x, int x_type, bool isCon1, 
         std::string y, int y_type, bool isCon2); // if not valid, just pass ""
 
+            // z = x op y
+    void addInterCode(INT_OP op, std::string z, int z_type,
+        std::string x, int x_type, bool isCon1, 
+        std::string y, int y_type, bool isCon2,
+        std::string rv, int rv_type, bool isCon3); // if not valid, just pass ""
+
     void printInterCode(std::ostream& os);
 
     std::string nextTempVar();
@@ -77,6 +83,13 @@ public:
     InterCodeEntry(INT_OP op_, InterOprand* x_, InterOprand* y_, InterOprand* z_) : op(op_), x(x_), y(y_), z(z_) {}
     
     
+};
+
+class InterCodeEntry_array : public InterCodeEntry {
+public:
+    InterOprand* rv;
+    InterCodeEntry_array(INT_OP op_, InterOprand* x_, InterOprand* y_, InterOprand* z_, InterOprand* rv_) :
+       InterCodeEntry(op_, x_, y_, z_), rv(rv_) {}
 };
 
 

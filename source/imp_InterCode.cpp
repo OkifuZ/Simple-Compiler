@@ -17,6 +17,18 @@ void Intermediate::addInterCode(INT_OP op, string z, int z_type,
     interCodeList.push_back(item);
 }
 
+void Intermediate::addInterCode(INT_OP op, std::string z, int z_type,
+                                std::string x, int x_type, bool isCon1, 
+                                std::string y, int y_type, bool isCon2,
+                                std::string rv, int rv_type, bool isCon3) {
+    InterOprand* z_ = new InterOprand(z, z_type, false);
+    InterOprand* x_ = new InterOprand(x, x_type, isCon1);
+    InterOprand* y_ = new InterOprand(y, y_type, isCon2);
+    InterOprand* rv_ = new InterOprand(rv, rv_type, isCon3);
+    InterCodeEntry_array* item = new InterCodeEntry_array(op, x_, y_, z_, rv_);
+    interCodeList.push_back(item);
+
+}
 
 
 void Intermediate::printInterCode(ostream& os) {

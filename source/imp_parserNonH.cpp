@@ -143,7 +143,7 @@ SynNode* Parser::referenceP(int* attr_intType_syn, bool isAssign, string& name, 
     } 
     else {
         *attr_intType_syn = attr_sym->getTYPE();
-        if (symbol.type == TYPE_SYM::LBRACK)
+        if (symbol.type == TYPE_SYM::LBRACK) // ARRAY
         {
             attr_intLine_syn = symbol.line;
             node->addChild(new TerNode(symbol));
