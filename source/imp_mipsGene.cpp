@@ -210,17 +210,29 @@ void MipsGenerator::assignGloReg2LocVar(SymbolTable* symTab) {
     int offset = 0;
     for (int i = 0; i < symTab->symTable.size(); i++) {
         SymTableEntry* symEntry = symTab->symTable[i];
-        if (symEntry->getCATE() != _CAT_FUNC && symEntry->getCATE() != _CAT_CONST) {
+        ArraySymEntry* arrSymEntry = dynamic_cast<ArraySymEntry*>(symEntry);
+        if (arrSymEntry != nullptr) {
+            int dim = arrSymEntry->getDim();
+            if (dim == 1) {
+                offset += 4 * arrSymEntry->getFIRST_SIZE();
+                arrSymEntry->offset = offset - 4;
+            }
+            else if (dim == 2) {
+                offset += 4 * arrSymEntry->getFIRST_SIZE() * arrSymEntry->getSECOND_SIZE();
+                arrSymEntry->offset = offset - 4;
+            }
+        }
+        else if (symEntry->getCATE() != _CAT_FUNC && symEntry->getCATE() != _CAT_CONST) {
             string name = symEntry->getName();
             if (k < 8) {
                 globalRegister[k].setVar(name);
             }
-            offset = k*4;
-            symEntry->offset = offset;
+            offset += 4;
+            symEntry->offset = offset - 4;
             k++;
         }
     }
-    topOffset += offset;
+    topOffset += offset - 4;
     if (symTab->symTable.size() > 0) {
         addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", topOffset, true));
     }
@@ -246,7 +258,7 @@ void MipsGenerator::GeneMipsCode() {
     // code
     for (int i = 0; i < interCodeList.size(); i++) {
         InterCodeEntry* inter = interCodeList[i];
-        if (true) {
+        #ifdef PRINT_ERROR_MESSAGE
             InterCodeEntry* line = inter;
             stringstream os;
             std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC" };
@@ -283,7 +295,7 @@ void MipsGenerator::GeneMipsCode() {
             }
             string s = os.str();
             addEntry(new MipsEntry(MIPS_INS::DEBUG, "", s, "", 0, false));
-        }
+        #endif
         string zr="", xr="", yr="";
         switch(inter->op) {
             case INT_OP::FUNC: {
@@ -315,6 +327,10 @@ void MipsGenerator::GeneMipsCode() {
                     }
                 }
                 break;
+            }
+            case INT_OP::ARRINI: {
+                InterCodeEntry_arrDec* interArr = dynamic_cast<InterCodeEntry_arrDec*>(inter);
+                
             }
             case INT_OP::ADD: {
                 zr = getRegister(inter->z->name, true);
