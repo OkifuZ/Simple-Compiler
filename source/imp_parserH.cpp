@@ -989,13 +989,25 @@ inline SynNode *Parser::assignSenP()
     return node;
 }
 
-inline SynNode *Parser::ifelseSenP(bool inFunc, int attr_retType, int* attr_retNum_syn)
+inline SynNode *Parser::ifelseSenP(bool inFunc, string lastLABEL, int attr_retType,  int* attr_retNum_syn)
 {
+    /*
+        if (cd) { if cd not true, jump to label_of_this
+            ...
+            jump to label_of_end
+        } 
+        label_of_this:
+        else ...
+        ...
+        label_of_end:
+    */
     int attr_intLine = -1;
     bool attr_res;
+    string label_of_this = "";
     NonTerNode *node = new NonTerNode(TYPE_NTS::IFELSE_SEN, true);
     if (symbol.type == TYPE_SYM::IFTK)
     {
+        label_of_this = intermediate->nextLabel(getCurFuncName());
         node->addChild(new TerNode(symbol));
         nextSym();
         if (symbol.type == TYPE_SYM::LPARENT)
@@ -1003,7 +1015,7 @@ inline SynNode *Parser::ifelseSenP(bool inFunc, int attr_retType, int* attr_retN
             attr_intLine = symbol.line;
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(conditionP());
+            node->addChild(conditionP(label_of_this)); // add condition for jump to label (OF THIS)
             if (symbol.type == TYPE_SYM::RPARENT)
             {
                 node->addChild(new TerNode(symbol));
@@ -1018,13 +1030,19 @@ inline SynNode *Parser::ifelseSenP(bool inFunc, int attr_retType, int* attr_retN
             printPos(66725);
     }
     else
+    {
         printPos(9947252);
-    node->addChild(sentenceP(inFunc, attr_retType));
+    }
+    string t;
+    node->addChild(sentenceP(inFunc, t, attr_retType));
+    intermediate->addInterCode(INT_OP::J, "", _INV, lastLABEL, _INV, false, "", _INV, false); // add jump to label (LAST LABEL)
+    intermediate->addInterCode(INT_OP::LABEL, "", _INV, label_of_this, _INV, false, "", _INV, false); //add label (OF THIS) for end 
+
     if (symbol.type == TYPE_SYM::ELSETK)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(inFunc, attr_retType));
+        node->addChild(sentenceP(inFunc, lastLABEL, attr_retType)); // add label (LAST LABEL)
     }
     return node;
 }
@@ -1059,7 +1077,7 @@ inline SynNode *Parser::compareOpP(int* attr_op)
     return node;
 }
 
-inline SynNode *Parser::conditionP()
+inline SynNode *Parser::conditionP(string jumpLabel)
 {
     int attr_leftType, attr_rightType, attr_leftVal, attr_rightVal, attr_op;
     NonTerNode *node = new NonTerNode(TYPE_NTS::CONDITION, true);
@@ -1079,6 +1097,30 @@ inline SynNode *Parser::conditionP()
     }
     // 0 <; 1 <=; 2 >; 3 >=; 4 ==; 5 !=
     // TODO 
+    switch (attr_op)
+    {
+    case 0: 
+        intermediate->addInterCode(INT_OP::BGE, jumpLabel, _INV, temVar1, attr_leftType, isConL, temVar2, attr_rightType, isConR);        
+        break;
+    case 1:
+        intermediate->addInterCode(INT_OP::BGT, jumpLabel, _INV, temVar1, attr_leftType, isConL, temVar2, attr_rightType, isConR);
+        break;
+    case 2:
+        intermediate->addInterCode(INT_OP::BLE, jumpLabel, _INV, temVar1, attr_leftType, isConL, temVar2, attr_rightType, isConR);
+        break;
+    case 3:
+        intermediate->addInterCode(INT_OP::BLT, jumpLabel, _INV, temVar1, attr_leftType, isConL, temVar2, attr_rightType, isConR);
+        break;
+    case 4:
+        intermediate->addInterCode(INT_OP::BNE, jumpLabel, _INV, temVar1, attr_leftType, isConL, temVar2, attr_rightType, isConR);
+        break;
+    case 5:
+        intermediate->addInterCode(INT_OP::BEQ, jumpLabel, _INV, temVar1, attr_leftType, isConL, temVar2, attr_rightType, isConR);
+        break;
+    default:
+        cout << "no such compare op in conditionP() !";
+        break;
+    }
     return node;
 }
 
@@ -1092,9 +1134,13 @@ inline SynNode *Parser::stepLengthP(int* attr_len)
 inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNum_syn)
 {
     int attr_line;
+    string lastLabel = "", beginLabel = "";
     NonTerNode *node = new NonTerNode(TYPE_NTS::LOOP_SEN, true);
     if (symbol.type == TYPE_SYM::WHILETK)
     {
+        beginLabel = intermediate->nextLabel(getCurFuncName(), "WHILEBG");
+        lastLabel = intermediate->nextLabel(getCurFuncName(), "WHILEED");
+        intermediate->addInterCode(INT_OP::LABEL, "", _INV, beginLabel, _INV, false, "", _INV, false);
         node->addChild(new TerNode(symbol));
         nextSym();
         if (symbol.type == TYPE_SYM::LPARENT)
@@ -1103,7 +1149,7 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
             bool attr_res;
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(conditionP());
+            node->addChild(conditionP(lastLabel));
             if (symbol.type == TYPE_SYM::RPARENT)
             {
                 node->addChild(new TerNode(symbol));
@@ -1117,20 +1163,24 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
         else{
             printPos(414151);
         }
-        node->addChild(sentenceP(isFunc, attr_type_inh, attr_retNum_syn));
+        node->addChild(sentenceP(isFunc, "", attr_type_inh, attr_retNum_syn));
+        intermediate->addInterCode(INT_OP::J, "", _INV, beginLabel, _INV, false, "", _INV, false);
+        intermediate->addInterCode(INT_OP::LABEL, "", _INV, lastLabel, _INV, false, "", _INV, false);
     }
     else if (symbol.type == TYPE_SYM::FORTK)
     {
-        string attr_strName;
-        int attr_line, attr_intType, attr_val;
+        string attr_strName, temVar, temVar2;
+        int attr_line, attr_intType, attr_val, attr_intType2, attr_len;
+        bool isMinu;
         node->addChild(new TerNode(symbol));
         nextSym();
+        lastLabel = intermediate->nextLabel(getCurFuncName(), "FOR");
         if (symbol.type == TYPE_SYM::LPARENT)
         {
             node->addChild(new TerNode(symbol));
             nextSym();
             // phase 1
-            string temVar;
+            
             bool isScaler;
             string i, j;
             bool ic, jc;
@@ -1143,7 +1193,7 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
             nextSym();
             int attr_expVal, attr_expType;
             bool isCon;
-            node->addChild(expressionP(&attr_expType, &isCon, temVar));
+            node->addChild(expressionP(&attr_expType, &isCon, temVar2));
             if (symbol.type == TYPE_SYM::SEMICN)
             {
                 node->addChild(new TerNode(symbol));
@@ -1153,9 +1203,12 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
                 printPos(99713);
                 addErrorMessage(symbol.line, 'k', "for语句中缺少分号1");
             }
+            intermediate->addInterCode(INT_OP::ASSIGN, temVar, attr_intType, temVar2, attr_expType, isCon, "", _INV, false);
             // phase 2
+            beginLabel = intermediate->nextLabel(getCurFuncName(), "FORBG");
+            intermediate->addInterCode(INT_OP::LABEL, "", _INV, beginLabel, _INV, false, "", _INV, false);
             bool attr_res;
-            node->addChild(conditionP());
+            node->addChild(conditionP(lastLabel));
             if (symbol.type == TYPE_SYM::SEMICN)
             {
                 node->addChild(new TerNode(symbol));
@@ -1165,6 +1218,7 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
                 printPos(99713);
                 addErrorMessage(symbol.line, 'k', "for语句中缺少分号2");
             }
+            // phase 3
             node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, &ic, j, &jc));
             if (!(symbol.type == TYPE_SYM::ASSIGN))
             {
@@ -1172,8 +1226,9 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
             }
             node->addChild(new TerNode(symbol));
             nextSym();
-            // phase 3
-            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, &ic, j, &jc));
+            
+            node->addChild(referenceP(&attr_intType2, true, temVar2, &isScaler, i, &ic, j, &jc));
+            isMinu = symbol.type == TYPE_SYM::MINU;
             if (!(symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU))
             {
                 printPos(26262);
@@ -1181,8 +1236,9 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
             node->addChild(new TerNode(symbol));
             nextSym();
             attr_line = symbol.line;
-            int attr_len;
+            
             node->addChild(stepLengthP(&attr_len));
+            
             if (symbol.type == TYPE_SYM::RPARENT)
             {
                 node->addChild(new TerNode(symbol));
@@ -1197,7 +1253,15 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
         {
             printPos(907691);
         }
-        node->addChild(sentenceP(isFunc, attr_type_inh, attr_retNum_syn));
+        node->addChild(sentenceP(isFunc, "", attr_type_inh, attr_retNum_syn));
+        if (isMinu) {
+            intermediate->addInterCode(INT_OP::SUB, temVar, attr_intType, temVar2, attr_intType2, false, int2str(attr_len), _TYPE_INT, true);
+        }
+        else {
+            intermediate->addInterCode(INT_OP::ADD, temVar, attr_intType, temVar2, attr_intType2, false, int2str(attr_len), _TYPE_INT, true);
+        }
+        intermediate->addInterCode(INT_OP::J, "", _INV, beginLabel, _INV, false, "", _INV, false);
+        intermediate->addInterCode(INT_OP::LABEL, "", _INV, lastLabel, _INV, false, "", _INV, false);
     }
     return node;
 }
@@ -1208,6 +1272,9 @@ inline SynNode *Parser::switchSenP(bool isFunc, int attr_retType_inh, int* attr_
     NonTerNode *node = new NonTerNode(TYPE_NTS::SWITCH_SEN, true);
     if (symbol.type == TYPE_SYM::SWITCHTK)
     {
+        string lastLabel = intermediate->nextLabel(getCurFuncName(), "SWITCHED");
+        string temVar;
+        bool isCon;
         node->addChild(new TerNode(symbol));
         nextSym();
         if (symbol.type == TYPE_SYM::LPARENT)
@@ -1215,8 +1282,6 @@ inline SynNode *Parser::switchSenP(bool isFunc, int attr_retType_inh, int* attr_
             node->addChild(new TerNode(symbol));
             nextSym();
             attr_line = symbol.line;
-            string temVar;
-            bool isCon;
             node->addChild(expressionP(&attr_expType, &isCon, temVar));
             if (symbol.type == TYPE_SYM::RPARENT)
             {
@@ -1236,7 +1301,7 @@ inline SynNode *Parser::switchSenP(bool isFunc, int attr_retType_inh, int* attr_
         {
             node->addChild(new TerNode(symbol));
             nextSym();
-            node->addChild(caseListP(attr_expType, isFunc, attr_retType_inh, attr_retNum_syn));
+            node->addChild(caseListP(attr_expType, isFunc, isCon, temVar, lastLabel, attr_retType_inh, attr_retNum_syn));
             node->addChild(defaultP(isFunc, attr_retType_inh, attr_retNum_syn));
             if (!(symbol.type == TYPE_SYM::RBRACE))
             {
@@ -1244,6 +1309,7 @@ inline SynNode *Parser::switchSenP(bool isFunc, int attr_retType_inh, int* attr_
             }
             node->addChild(new TerNode(symbol));
             nextSym();
+            intermediate->addInterCode(INT_OP::LABEL, "", _INV, lastLabel, _INV, false, "", _INV, false);
         }
         else
         {
@@ -1254,12 +1320,14 @@ inline SynNode *Parser::switchSenP(bool isFunc, int attr_retType_inh, int* attr_
     {
         printPos(626666);
     }
+
     return node;
 }
 
-inline SynNode *Parser::caseSenP(int attr_expType_inh, bool isFunc, int attr_retType_inh, int* attr_retNum_syn)
+inline SynNode *Parser::caseSenP(int attr_expType_inh, bool isFunc, bool isConExp, string exp_var, string lastLabel, int attr_retType_inh, int* attr_retNum_syn)
 {
     int attr_constType, attr_constVal, attr_line;
+    string this_label = intermediate->nextLabel(getCurFuncName(), "CASE");
     NonTerNode *node = new NonTerNode(TYPE_NTS::CASE_SEN, true);
     if (symbol.type == TYPE_SYM::CASETK)
     {
@@ -1273,9 +1341,15 @@ inline SynNode *Parser::caseSenP(int attr_expType_inh, bool isFunc, int attr_ret
         if (!(symbol.type == TYPE_SYM::COLON)){
             printPos(366134);
         }
+        intermediate->addInterCode(INT_OP::BNE, this_label, _INV, 
+                                   exp_var, attr_expType_inh, isConExp, 
+                                   int2str(attr_constVal), attr_constType, true);
+
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(isFunc, attr_retType_inh, attr_retNum_syn));
+        node->addChild(sentenceP(isFunc, "", attr_retType_inh, attr_retNum_syn));
+        intermediate->addInterCode(INT_OP::J, "", _INV, lastLabel, _INV, false, "", _INV, false);
+        intermediate->addInterCode(INT_OP::LABEL, "", _INV, this_label, _INV, false, "", _INV, false);
     }
     else
     {
@@ -1284,13 +1358,15 @@ inline SynNode *Parser::caseSenP(int attr_expType_inh, bool isFunc, int attr_ret
     return node;
 }
 
-inline SynNode *Parser::caseListP(int attr_expType_inh, bool isFunc, int attr_retType_inh, int* attr_retNum_syn)
+inline SynNode *Parser::caseListP(int attr_expType_inh, bool isFunc, 
+                                  bool isConExp, string exp_var, string lastLabel, 
+                                  int attr_retType_inh, int* attr_retNum_syn)
 {
     NonTerNode *node = new NonTerNode(TYPE_NTS::CASE_LIST, true);
-    node->addChild(caseSenP(attr_expType_inh, isFunc, attr_retType_inh, attr_retNum_syn));
+    node->addChild(caseSenP(attr_expType_inh, isFunc, isConExp, exp_var, lastLabel, attr_retType_inh, attr_retNum_syn));
     while (symbol.type == TYPE_SYM::CASETK)
     {
-        node->addChild(caseSenP(attr_expType_inh, isFunc, attr_retType_inh, attr_retNum_syn));
+        node->addChild(caseSenP(attr_expType_inh, isFunc, isConExp, exp_var, lastLabel, attr_retType_inh, attr_retNum_syn));
     }
     return node;
 }
@@ -1308,7 +1384,7 @@ inline SynNode *Parser::defaultP(bool isFunc, int attr_retType_inh, int* attr_re
         }
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(isFunc, attr_retType_inh, attr_retNum_syn));
+        node->addChild(sentenceP(isFunc, "", attr_retType_inh, attr_retNum_syn));
         popCurTable();
     }
     else
@@ -1498,7 +1574,7 @@ SynNode *Parser::returnSenP(int attr_retType_inh, int* attr_retNum_syn, bool inM
 }
 
 
-inline SynNode *Parser::sentenceP(bool inFunc, int attr_type_inh, int* attr_retNum_syn, bool inMain)
+inline SynNode *Parser::sentenceP(bool inFunc, string lastLABEL, int attr_type_inh, int* attr_retNum_syn, bool inMain)
 { 
     int attr_intLine = -1;
     NonTerNode *node = new NonTerNode(TYPE_NTS::SENTENCE, true);
@@ -1508,7 +1584,18 @@ inline SynNode *Parser::sentenceP(bool inFunc, int attr_type_inh, int* attr_retN
     }
     else if (symbol.type == TYPE_SYM::IFTK)
     {
-        node->addChild(ifelseSenP(inFunc, attr_type_inh, attr_retNum_syn));
+        bool fatherIf = false;
+        if (lastLABEL == "") {
+            fatherIf = true;
+            lastLABEL = intermediate->nextLabel(getCurFuncName(), "END");
+        }
+        else {
+            // in if-else chain
+        }
+        node->addChild(ifelseSenP(inFunc, lastLABEL, attr_type_inh, attr_retNum_syn));
+        if (fatherIf) { // add last label
+            intermediate->addInterCode(INT_OP::LABEL, "", _INV, lastLABEL, _INV, false, "", _INV, false);
+        }
     }
     else if (symbol.type == TYPE_SYM::SCANFTK)
     {
@@ -1581,7 +1668,7 @@ inline SynNode *Parser::sentenceListP(bool inFunc, int attr_type_inh, int* attr_
             symbol.type == TYPE_SYM::IDENFR ||
             symbol.type == TYPE_SYM::LBRACE)
         {
-            node->addChild(sentenceP(inFunc, attr_type_inh, attr_retNum_syn, inMain));
+            node->addChild(sentenceP(inFunc, "", attr_type_inh, attr_retNum_syn, inMain));
         }
         else{
             break;

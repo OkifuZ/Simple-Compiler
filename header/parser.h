@@ -60,15 +60,16 @@ public:
     SynNode* callFuncSenP(int*);
     SynNode* valueArgueListP(FuncSymEntry* func);
     SynNode* assignSenP();
-    SynNode* sentenceP(bool inFunc, int type = _TYPE_ERROR, int* retNum=0, bool inMain = false);
+    // if not following else tk, lastLabel should be ""
+    SynNode* sentenceP(bool inFunc, std::string lastLABEL, int type = _TYPE_ERROR, int* retNum=0, bool inMain = false);
     SynNode* sentenceListP(bool inFunc, int type = _TYPE_ERROR, int* retNum=0, bool inMain = false);
-    SynNode* ifelseSenP(bool inFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* conditionP();
+    SynNode* ifelseSenP(bool inFunc, std::string lastLABEL, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* conditionP(std::string jumpLabel);
     SynNode* loopSenP(bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
     SynNode* stepLengthP(int*);
     SynNode* switchSenP(bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* caseListP(int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
-    SynNode* caseSenP(int expType, bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* caseListP(int expType, bool isFunc, bool isConExp, std::string exp_var, std::string lastLabel,int type = _TYPE_ERROR, int* retNum=0);
+    SynNode* caseSenP(int expType, bool isFunc, bool isConExp, std::string exp_var, std::string lastLabel, int type = _TYPE_ERROR,  int* retNum=0);
     SynNode* defaultP(bool isFunc, int type = _TYPE_ERROR, int* retNum=0);
     SynNode* readSenP();
     SynNode* writeSenP();
@@ -89,6 +90,8 @@ public:
 
     EnvTable envTable;
     
+    std::string getCurFuncName() { return envTable.top->funcName; }
+
     bool checkDuplicate(std::string name) { return envTable.checkDuplicate(name); }
 
     FuncSymEntry* getFUNC_CALL(std::string name);

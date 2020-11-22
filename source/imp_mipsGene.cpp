@@ -272,7 +272,7 @@ void MipsGenerator::GeneMipsCode() {
     // code
     for (int i = 0; i < interCodeList.size(); i++) {
         InterCodeEntry* inter = interCodeList[i];
-        #ifdef PRINT_ERROR_MESSAGE
+        #ifdef PRINT_ERROR_MESSAGE1
             InterCodeEntry* line = inter;
             stringstream os;
             std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC", "ARRINI" };
@@ -682,11 +682,199 @@ void MipsGenerator::GeneMipsCode() {
                 break;
             }
             case INT_OP::J: {
-                // string funcNameStr = inter->x->name;
-                // SymbolTable* funcSymTab = env.getTableByFuncName(funcNameStr);
-                // if (funcSymTab != nullptr) {
-                //        temVarOffsetMap.clear();
-                // }
+                addEntry(new MipsEntry(MIPS_INS::J, "", inter->x->name, "", 0, false));
+                break;
+            }
+            case INT_OP::LABEL: {
+                addEntry(new MipsEntry(MIPS_INS::LABEL, "", inter->x->name, "", 0, false));
+                break;
+            }
+            case INT_OP::BEQ: {
+                int con_x = 0, con_y = 0;
+                bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                bool isImm_x = isConstX | inter->x->isCon;
+                bool isImm_y = isConstY | inter->y->isCon;
+                if (isImm_x && isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    string temVar = "#condition";
+                    string temReg = getRegister(temVar, false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true));
+                    addEntry(new MipsEntry(MIPS_INS::BEQ, inter->z->name, temReg, "", yv, true));
+                    freeReg(temReg);
+                }
+                else if (isImm_x && !isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BEQ, inter->z->name, yr, "", xv, true));
+                }
+                else if (!isImm_x && isImm_y) {
+                    xr = getRegister(inter->x->name, true);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    addEntry(new MipsEntry(MIPS_INS::BEQ, inter->z->name, xr, "", yv, true));
+                }
+                else {
+                    xr = getRegister(inter->x->name, true);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BEQ, inter->z->name, xr, yr, 0, false));
+                }
+
+                break;
+            }
+            case INT_OP::BGE: {
+                int con_x = 0, con_y = 0;
+                bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                bool isImm_x = isConstX | inter->x->isCon;
+                bool isImm_y = isConstY | inter->y->isCon;
+                if (isImm_x && isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    string temVar = "#condition";
+                    string temReg = getRegister(temVar, false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true));
+                    addEntry(new MipsEntry(MIPS_INS::BGE, inter->z->name, temReg, "", yv, true));
+                }
+                else if (isImm_x && !isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BLE, inter->z->name, yr, "", xv, true));
+                }
+                else if (!isImm_x && isImm_y) {
+                    xr = getRegister(inter->x->name, true);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    addEntry(new MipsEntry(MIPS_INS::BGE, inter->z->name, xr, "", yv, true));
+                }
+                else {
+                    xr = getRegister(inter->x->name, true);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BGE, inter->z->name, xr, yr, 0, false));
+                }
+                break;
+            }
+            case INT_OP::BGT: {
+                int con_x = 0, con_y = 0;
+                bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                bool isImm_x = isConstX | inter->x->isCon;
+                bool isImm_y = isConstY | inter->y->isCon;
+                if (isImm_x && isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    string temVar = "#condition";
+                    string temReg = getRegister(temVar, false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true));
+                    addEntry(new MipsEntry(MIPS_INS::BGT, inter->z->name, temReg, "", yv, true));
+                }
+                else if (isImm_x && !isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BLT, inter->z->name, yr, "", xv, true));
+                }
+                else if (!isImm_x && isImm_y) {
+                    xr = getRegister(inter->x->name, true);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    addEntry(new MipsEntry(MIPS_INS::BGT, inter->z->name, xr, "", yv, true));
+                }
+                else {
+                    xr = getRegister(inter->x->name, true);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BGT, inter->z->name, xr, yr, 0, false));
+                }
+                break;
+            }
+            case INT_OP::BLT: {
+                int con_x = 0, con_y = 0;
+                bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                bool isImm_x = isConstX | inter->x->isCon;
+                bool isImm_y = isConstY | inter->y->isCon;
+                if (isImm_x && isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    string temVar = "#condition";
+                    string temReg = getRegister(temVar, false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true));
+                    addEntry(new MipsEntry(MIPS_INS::BLT, inter->z->name, temReg, "", yv, true));
+                }
+                else if (isImm_x && !isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BGT, inter->z->name, yr, "", xv, true));
+                }
+                else if (!isImm_x && isImm_y) {
+                    xr = getRegister(inter->x->name, true);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    addEntry(new MipsEntry(MIPS_INS::BLT, inter->z->name, xr, "", yv, true));
+                }
+                else {
+                    xr = getRegister(inter->x->name, true);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BLT, inter->z->name, xr, yr, 0, false));
+                }
+                break;
+            }
+            case INT_OP::BLE: {
+                int con_x = 0, con_y = 0;
+                bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                bool isImm_x = isConstX | inter->x->isCon;
+                bool isImm_y = isConstY | inter->y->isCon;
+                if (isImm_x && isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    string temVar = "#condition";
+                    string temReg = getRegister(temVar, false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true));
+                    addEntry(new MipsEntry(MIPS_INS::BLE, inter->z->name, temReg, "", yv, true));
+                }
+                else if (isImm_x && !isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BGE, inter->z->name, yr, "", xv, true));
+                }
+                else if (!isImm_x && isImm_y) {
+                    xr = getRegister(inter->x->name, true);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    addEntry(new MipsEntry(MIPS_INS::BLE, inter->z->name, xr, "", yv, true));
+                }
+                else {
+                    xr = getRegister(inter->x->name, true);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BLE, inter->z->name, xr, yr, 0, false));
+                }
+                break;
+            }
+            case INT_OP::BNE: {
+                int con_x = 0, con_y = 0;
+                bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                bool isImm_x = isConstX | inter->x->isCon;
+                bool isImm_y = isConstY | inter->y->isCon;
+                if (isImm_x && isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    string temVar = "#condition";
+                    string temReg = getRegister(temVar, false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true));
+                    addEntry(new MipsEntry(MIPS_INS::BNE, inter->z->name, temReg, "", yv, true));
+                }
+                else if (isImm_x && !isImm_y) {
+                    int xv = isConstX ? con_x : str2int(inter->x->name);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BNE, inter->z->name, yr, "", xv, true));
+                }
+                else if (!isImm_x && isImm_y) {
+                    xr = getRegister(inter->x->name, true);
+                    int yv = isConstY ? con_y : str2int(inter->y->name);
+                    addEntry(new MipsEntry(MIPS_INS::BNE, inter->z->name, xr, "", yv, true));
+                }
+                else {
+                    xr = getRegister(inter->x->name, true);
+                    yr = getRegister(inter->y->name, true);
+                    addEntry(new MipsEntry(MIPS_INS::BNE, inter->z->name, xr, yr, 0, false));
+                }
                 break;
             }
             case INT_OP::EXIT: {
@@ -743,6 +931,54 @@ void MipsGenerator::printMipsCode(ostream& os) {
                 break;
             case MIPS_INS::J: // x = label
                 os << "j" << " " << line->x << "\n";
+                break;
+            case MIPS_INS::BEQ:
+                if (line->hasImmediate) {
+                    os << "beq"  << " " << line->x << ", " << line->immediate << ", " << line->z << "\n";
+                }
+                else {
+                    os << "beq"  << " " << line->x << ", " << line->y << ", " << line->z << "\n";
+                }
+                break;
+            case MIPS_INS::BNE:
+                if (line->hasImmediate) {
+                    os << "bne"  << " " << line->x << ", " << line->immediate << ", " << line->z << "\n";
+                }
+                else {
+                    os << "bne"  << " " << line->x << ", " << line->y << ", " << line->z << "\n";
+                }
+                break;
+            case MIPS_INS::BLT:
+                if (line->hasImmediate) {
+                    os << "blt"  << " " << line->x << ", " << line->immediate << ", " << line->z << "\n";
+                }
+                else {
+                    os << "blt"  << " " << line->x << ", " << line->y << ", " << line->z << "\n";
+                }
+                break;
+            case MIPS_INS::BLE:
+                if (line->hasImmediate) {
+                    os << "ble"  << " " << line->x << ", " << line->immediate << ", " << line->z << "\n";
+                }
+                else {
+                    os << "ble"  << " " << line->x << ", " << line->y << ", " << line->z << "\n";
+                }
+                break;
+            case MIPS_INS::BGT:
+                if (line->hasImmediate) {
+                    os << "bgt"  << " " << line->x << ", " << line->immediate << ", " << line->z << "\n";
+                }
+                else {
+                    os << "bgt"  << " " << line->x << ", " << line->y << ", " << line->z << "\n";
+                }
+                break;
+            case MIPS_INS::BGE:
+                if (line->hasImmediate) {
+                    os << "bge"  << " " << line->x << ", " << line->immediate << ", " << line->z << "\n";
+                }
+                else {
+                    os << "bge"  << " " << line->x << ", " << line->y << ", " << line->z << "\n";
+                }
                 break;
             case MIPS_INS::LA: // z = tar, x = label, y = reg, immediate = offset
                 if (line->hasImmediate && line->y!="") { // la $1, label+10($2)

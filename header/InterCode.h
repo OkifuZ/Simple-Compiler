@@ -9,7 +9,10 @@
 #include "errHand.h"
 #include "tool.h"
 
-enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, SCAN, PRINT, J, EXIT, FUNC, ENDFUNC, ARRINI};
+enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, 
+                  SCAN, PRINT, J, EXIT, FUNC, 
+                  ENDFUNC, ARRINI, 
+                  BLE, BLT, BGE, BGT, BNE, BEQ, LABEL};
 
 class InterCodeEntry;
 class InterOprand;
@@ -39,14 +42,19 @@ public:
 
     std::string nextTempVar();
 
+    std::string nextLabel(std::string funcName, std::string tag = "");
+
     std::vector<InterCodeEntry*> interCodeList;
 
 private:
     int temCount = 0;
+    int funcLabelCount = 0;
+    std::string lastFuncName = "";
     EnvTable* env;
     std::vector<std::string> INT_OP_STR = {"ADD", "SUB", "MULT", "DIV", "ASSIGN", 
                                            "SCAN", "PRINT", "J", "EXIT", "FUNC", 
-                                           "ENDFUNC", "ARRINI"};
+                                           "ENDFUNC", "ARRINI",
+                                           "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL"};
 
 };
 

@@ -45,9 +45,8 @@ void Intermediate::printInterCode(ostream& os) {
         os << this->INT_OP_STR[static_cast<int>(line->op)] << " ";
         if (line->op == INT_OP::FUNC) {
             os << ": " << line->x->name << "\n";
-            continue;
         }
-        if (line->op == INT_OP::ARRINI) {
+        else if (line->op == INT_OP::ARRINI) {
             os << line->z->name << " ";
             InterCodeEntry_arrDec *l = dynamic_cast<InterCodeEntry_arrDec*>(line);
             vector<int> iniList = (l->iniList);
@@ -60,44 +59,18 @@ void Intermediate::printInterCode(ostream& os) {
                 }
             }
             os << endl;
-            continue;
         }
-        InterCodeEntry_array* arrline = dynamic_cast<InterCodeEntry_array*>(line);
-        if (arrline != nullptr) {
-            if (line->z->isValid) {
-                os << line->z->name;
-            }
-            if (arrline->arrInRight) { // tem = a[i][j]
-                if (arrline->rv->isValid) {
-                    os << " " << arrline->rv->name;
-                }
-                if (line->x->isValid) {
-                    os << "[" <<line->x->name << "]";
-                }
-                if (line->y->isValid) {
-                    os << "[" << line->y->name << "]";
-                }
-            }
-            else { // a[i][j] = tem
-                if (line->x->isValid) {
-                    os << "[" <<line->x->name << "]";
-                }
-                if (line->y->isValid) {
-                    os << "[" << line->y->name << "] ";
-                }
-                if (arrline->rv->isCon && arrline->rv->type == _TYPE_CHAR) {
-                    os << "\'" <<arrline->rv->getConstChar() << "\' ";
-                }
-                else {
-                    os << arrline->rv->name << " ";
-                }
-            }
+        else if (line->op == INT_OP::LABEL) {
+            os << line->x->name << ": ";
             os << endl;
         }
-        else {
-            if (line->z->isValid) {
-                os << line->z->name << " ";
-            }
+        else if (line->op == INT_OP::BEQ ||
+                 line->op == INT_OP::BGE ||
+                 line->op == INT_OP::BGT ||
+                 line->op == INT_OP::BLE ||
+                 line->op == INT_OP::BLT ||
+                 line->op == INT_OP::BNE) {
+            os << line->z->name << " ";
             if (line->x->isValid) {
                 if (line->x->isCon && line->x->type == _TYPE_CHAR) {
                     os << "\'" <<line->x->getConstChar() << "\' ";
@@ -122,10 +95,81 @@ void Intermediate::printInterCode(ostream& os) {
             }
             os << endl;
         }
+        else {
+            InterCodeEntry_array* arrline = dynamic_cast<InterCodeEntry_array*>(line);
+            if (arrline != nullptr) {
+                if (line->z->isValid) {
+                    os << line->z->name;
+                }
+                if (arrline->arrInRight) { // tem = a[i][j]
+                    if (arrline->rv->isValid) {
+                        os << " " << arrline->rv->name;
+                    }
+                    if (line->x->isValid) {
+                        os << "[" <<line->x->name << "]";
+                    }
+                    if (line->y->isValid) {
+                        os << "[" << line->y->name << "]";
+                    }
+                }
+                else { // a[i][j] = tem
+                    if (line->x->isValid) {
+                        os << "[" <<line->x->name << "]";
+                    }
+                    if (line->y->isValid) {
+                        os << "[" << line->y->name << "] ";
+                    }
+                    if (arrline->rv->isCon && arrline->rv->type == _TYPE_CHAR) {
+                        os << "\'" <<arrline->rv->getConstChar() << "\' ";
+                    }
+                    else {
+                        os << arrline->rv->name << " ";
+                    }
+                }
+                os << endl;
+            }
+            else {
+                if (line->z->isValid) {
+                    os << line->z->name << " ";
+                }
+                if (line->x->isValid) {
+                    if (line->x->isCon && line->x->type == _TYPE_CHAR) {
+                        os << "\'" <<line->x->getConstChar() << "\' ";
+                    }
+                    else if (line->x->isCon && line->x->type == _TYPE_STR) {
+                        os << "\"" <<line->x->name << "\" ";
+                    }
+                    else {
+                        os << line->x->name << " ";
+                    }
+                }
+                if (line->y->isValid) {
+                    if (line->y->isCon && line->y->type == _TYPE_CHAR) {
+                        os << "\'" <<line->y->getConstChar() << "\' ";
+                    }
+                    else if (line->y->isCon && line->y->type == _TYPE_STR) {
+                        os << "\"" <<line->y->name << "\" ";
+                    }
+                    else {
+                        os << line->y->name << " ";
+                    }
+                }
+                os << endl;
+            }
+        }
     }
 }
 
 string Intermediate::nextTempVar() {
     temCount++;
     return "#temVar" + int2str(this->temCount);
+}
+
+string Intermediate::nextLabel(string funcName, string tag) {
+    if (lastFuncName != funcName) {
+        lastFuncName = funcName;
+        funcLabelCount = 0;
+    }
+    funcLabelCount++;
+    return funcName + tag + "x" + int2str(funcLabelCount);
 }
