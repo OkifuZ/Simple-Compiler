@@ -67,6 +67,7 @@ public:
 
     bool checkIsConst(std::string name, int* value);
 
+    void freeReg(std::string regName);
 
 private:
     void addEntry(MipsEntry* e) { mipsCodeList.push_back(e); }

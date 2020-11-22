@@ -78,10 +78,10 @@ public:
     SynNode* mainP();
 
 // programAnalysis nonhighlight
-    SynNode* arrayConstP(int, int*, int*, std::vector<int> *); // {}
-    SynNode* doubleArrayConstP(int, int, int*, int*, std::vector<int> *); // {{}}
+    SynNode* arrayConstP(int, int*, int*, std::vector<int>&); // {}
+    SynNode* doubleArrayConstP(int, int, int*, int*, std::vector<int>&); // {{}}
     SynNode* oneDdeclareP(int* ); // [x]
-    SynNode* referenceP(int*, bool, std::string&, bool*, std::string&, std::string&);
+    SynNode* referenceP(int*, bool, std::string&, bool*, std::string&, bool* isCon_i, std::string&, bool* isCon_j);
     void semicnP(NonTerNode*);
 
 

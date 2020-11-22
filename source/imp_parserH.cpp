@@ -302,14 +302,14 @@ inline SynNode *Parser::varDerWithInitP(int attr_intType_inh, int* attr_lastLine
             hasASSIGN = true;
             node->addChild(new TerNode(symbol));
             nextSym();
-            vector<int>* iniList;
-            node->addChild(arrayConstP(attr_size1_syn, &attr_conType_syn, &attr_intLine_syn, iniList));
+            vector<int>* iniList = new vector<int>;
+            node->addChild(arrayConstP(attr_size1_syn, &attr_conType_syn, &attr_intLine_syn, *iniList));
             if (attr_intType_inh != attr_conType_syn)
             {
                 addErrorMessage(attr_intLine_syn, 'o', "变量定义初始化一维数组常量类型不一致");
             }
             *attr_lastLine_syn = attr_intLine_syn;
-            intermediate->addInterCode(INT_OP::ARRINI, attr_strNmae_syn, attr_conType_syn, iniList);
+            intermediate->addInterCode(INT_OP::ARRINI, attr_strNmae_syn, attr_conType_syn, *iniList);
             addSymbolEntry(
                 new ArraySymEntry(attr_strNmae_syn, attr_cate_inh, attr_intType_inh, attr_size1_syn));
         }
@@ -321,14 +321,14 @@ inline SynNode *Parser::varDerWithInitP(int attr_intType_inh, int* attr_lastLine
                 hasASSIGN = true;
                 node->addChild(new TerNode(symbol));
                 nextSym();
-                vector<int>* iniList;
-                node->addChild(doubleArrayConstP(attr_size1_syn, attr_size2_syn, &attr_conType_syn, &attr_intLine_syn, iniList));
+                vector<int>* iniList = new vector<int>;
+                node->addChild(doubleArrayConstP(attr_size1_syn, attr_size2_syn, &attr_conType_syn, &attr_intLine_syn, *iniList));
                 if (attr_intType_inh != attr_conType_syn)
                 {
                     addErrorMessage(attr_intLine_syn, 'o', "变量定义初始化二维数组常量类型不一致");
                 }
                 *attr_lastLine_syn = attr_intLine_syn;
-                intermediate->addInterCode(INT_OP::ARRINI, attr_strNmae_syn, attr_conType_syn, iniList);
+                intermediate->addInterCode(INT_OP::ARRINI, attr_strNmae_syn, attr_conType_syn, *iniList);
                 addSymbolEntry(
                     new ArraySymEntry(attr_strNmae_syn, attr_cate_inh, attr_intType_inh, attr_size1_syn, attr_size2_syn));
             }
@@ -609,7 +609,8 @@ inline SynNode *Parser::factorP(int* attr_intType_syn, bool* isCon_syn, string& 
             string idenName;
             bool isScaler;
             string i, j;
-            node->addChild(referenceP(attr_intType_syn, false, idenName, &isScaler, i, j));
+            bool ic, jc;
+            node->addChild(referenceP(attr_intType_syn, false, idenName, &isScaler, i, &ic, j, &jc));
             // CODE GENE
             if (isScaler) { // just int or char
                 facVar = idenName;
@@ -617,8 +618,8 @@ inline SynNode *Parser::factorP(int* attr_intType_syn, bool* isCon_syn, string& 
             else { // temvar = a[i][j]
                 string temVar = intermediate->nextTempVar();
                 intermediate->addInterCode(INT_OP::ASSIGN, temVar, *attr_intType_syn, 
-                i, _TYPE_INT, false,
-                j, _TYPE_INT, false, 
+                i, _TYPE_INT, ic,
+                j, _TYPE_INT, jc, 
                 idenName, *attr_intType_syn, false,
                 true);
                 facVar = temVar;
@@ -961,7 +962,8 @@ inline SynNode *Parser::assignSenP()
     string tarVar;
     bool isScaler;
     string i, j;
-    node->addChild(referenceP(&attr_leftType, true, tarVar, &isScaler, i, j));
+    bool ic, jc;
+    node->addChild(referenceP(&attr_leftType, true, tarVar, &isScaler, i, &ic, j, &jc));
     if (symbol.type == TYPE_SYM::ASSIGN)
     {
         node->addChild(new TerNode(symbol));
@@ -974,8 +976,8 @@ inline SynNode *Parser::assignSenP()
         }
         else { // tarvar[i][j] = temvar
             intermediate->addInterCode(INT_OP::ASSIGN, tarVar, attr_leftType, 
-                                       i, _TYPE_INT, false, 
-                                       j, _TYPE_INT, false, 
+                                       i, _TYPE_INT, ic, 
+                                       j, _TYPE_INT, jc, 
                                        temVar, attr_rightType, isCon,
                                        false);
         }
@@ -1131,7 +1133,8 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
             string temVar;
             bool isScaler;
             string i, j;
-            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, j));
+            bool ic, jc;
+            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, &ic, j, &jc));
             if (!(symbol.type == TYPE_SYM::ASSIGN))
             {
                 printPos(841656);
@@ -1162,7 +1165,7 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
                 printPos(99713);
                 addErrorMessage(symbol.line, 'k', "for语句中缺少分号2");
             }
-            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, j));
+            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, &ic, j, &jc));
             if (!(symbol.type == TYPE_SYM::ASSIGN))
             {
                 printPos(61319);
@@ -1170,7 +1173,7 @@ inline SynNode *Parser::loopSenP(bool isFunc, int attr_type_inh, int* attr_retNu
             node->addChild(new TerNode(symbol));
             nextSym();
             // phase 3
-            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, j));
+            node->addChild(referenceP(&attr_intType, true, temVar, &isScaler, i, &ic, j, &jc));
             if (!(symbol.type == TYPE_SYM::PLUS || symbol.type == TYPE_SYM::MINU))
             {
                 printPos(26262);
@@ -1333,7 +1336,8 @@ inline SynNode *Parser::readSenP()
             node->addChild(new TerNode(symbol));
             nextSym();
             string i, j;
-            node->addChild(referenceP(&attr_type, true, attr_strName, &isScaler, i, j));
+            bool ic, jc;
+            node->addChild(referenceP(&attr_type, true, attr_strName, &isScaler, i, &ic, j, &jc));
             #ifdef PRINT_ERROR_MESSAGE
             if (!isScaler) {
                 cout << "read to an array!";

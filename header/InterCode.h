@@ -32,7 +32,7 @@ public:
         bool arrInRight); // if not valid, just pass ""
 
     void addInterCode(INT_OP op, std::string z, int z_type,
-        std::vector<int>* iniList); // if not valid, just pass ""
+        std::vector<int>& iniList); // if not valid, just pass ""
 
 
     void printInterCode(std::ostream& os);
@@ -102,8 +102,8 @@ public:
 
 class InterCodeEntry_arrDec : public InterCodeEntry {
 public:
-    std::vector<int>* iniList;
-    InterCodeEntry_arrDec(INT_OP op_, InterOprand* x_, InterOprand* y_, InterOprand* z_, std::vector<int>* v) :
+    std::vector<int>& iniList;
+    InterCodeEntry_arrDec(INT_OP op_, InterOprand* x_, InterOprand* y_, InterOprand* z_, std::vector<int>& v) :
         InterCodeEntry(op_, x_, y_, z_), iniList(v) {}
 };
 

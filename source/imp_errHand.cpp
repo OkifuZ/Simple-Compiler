@@ -61,7 +61,18 @@ void SymbolTable::printSymTable(ostream& os) {
 int SymbolTable::calculateOffset() { // 0, 4, 8, 12, ...
 	int offset = 0;
 	for (auto iter: symTable) {
-		if (iter->category != _CAT_CONST && iter->category != _CAT_FUNC) {
+        ArraySymEntry* arrSymEntry = dynamic_cast<ArraySymEntry*>(iter);
+		if (arrSymEntry != nullptr) {
+            int dim = arrSymEntry->getDim();
+            arrSymEntry->offset = offset;
+            if (dim == 1) {
+                offset += 4 * arrSymEntry->getFIRST_SIZE();
+            }
+            else if (dim == 2) {
+                offset += 4 * arrSymEntry->getFIRST_SIZE() * arrSymEntry->getSECOND_SIZE();
+            }
+        }
+        else if (iter->category != _CAT_CONST && iter->category != _CAT_FUNC) {
 			iter->offset = offset;
 			offset += 4;
 		}

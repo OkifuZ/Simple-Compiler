@@ -32,7 +32,7 @@ void Intermediate::addInterCode(INT_OP op, std::string z, int z_type,
 }
 
 void Intermediate::addInterCode(INT_OP op, std::string z, int z_type,
-                  std::vector<int>* iniList) {
+                  std::vector<int>& iniList) {
     InterOprand* z_ = new InterOprand(z, z_type, false);
     InterOprand* x_ = new InterOprand("", _INV, false);
     InterOprand* y_ = new InterOprand("", _INV, false);
@@ -50,7 +50,7 @@ void Intermediate::printInterCode(ostream& os) {
         if (line->op == INT_OP::ARRINI) {
             os << line->z->name << " ";
             InterCodeEntry_arrDec *l = dynamic_cast<InterCodeEntry_arrDec*>(line);
-            vector<int> iniList = *(l->iniList);
+            vector<int> iniList = (l->iniList);
             for (auto i : iniList) {
                 if (l->z->type == _TYPE_INT) {
                     os << i << ", ";
@@ -89,7 +89,7 @@ void Intermediate::printInterCode(ostream& os) {
                     os << "\'" <<arrline->rv->getConstChar() << "\' ";
                 }
                 else {
-                    os << line->x->name << " ";
+                    os << arrline->rv->name << " ";
                 }
             }
             os << endl;

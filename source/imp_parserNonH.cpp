@@ -12,18 +12,17 @@
 using namespace std;
 
 
-SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_intLine_syn, vector<int>* iniList)
+SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_intLine_syn, vector<int>& iniList)
 {
     int i = 0, attr_temType;
     int attr_conVal_syn;
-    iniList = new vector<int>();
     NonTerNode *node = new NonTerNode(TYPE_NTS::ARRAY_CONST, false);
     if (symbol.type == TYPE_SYM::LBRACE)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
         node->addChild(constP( attr_intType_syn, &attr_conVal_syn, attr_intLine_syn));
-        iniList->push_back(attr_conVal_syn);
+        iniList.push_back(attr_conVal_syn);
         i++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
@@ -32,7 +31,7 @@ SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_
             nextSym();
             int attr_line_tem;
             node->addChild(constP(&attr_temType, &attr_conVal_syn, &attr_line_tem));
-            iniList->push_back(attr_conVal_syn);
+            iniList.push_back(attr_conVal_syn);
             if (attr_temType != *attr_intType_syn)
             {
                 *attr_intType_syn = _TYPE_ERROR;
@@ -59,18 +58,18 @@ SynNode *Parser::arrayConstP(int attr_size_inh, int *attr_intType_syn, int*attr_
 }
 
 SynNode *Parser::doubleArrayConstP
-(int attr_size1_inh, int attr_size2_inh, int *attr_intType_syn, int* attr_intLine_syn, vector<int>* iniList)
+(int attr_size1_inh, int attr_size2_inh, int *attr_intType_syn, int* attr_intLine_syn, vector<int>& iniList)
 {
-    iniList = new vector<int>();
     int i = 0, attr_temType, attr_line;
     NonTerNode *node = new NonTerNode(TYPE_NTS::DBARRAY_CONST, false);
     if (symbol.type == TYPE_SYM::LBRACE)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        vector<int>* iniSubList;
+        vector<int> iniSubList;
         node->addChild(arrayConstP(attr_size2_inh, attr_intType_syn, &attr_line, iniSubList));
-        iniList->insert(iniList->end(), iniSubList->begin(), iniSubList->end());
+        iniList.insert(iniList.end(), iniSubList.begin(), iniSubList.end());
+        iniSubList.clear();
         i++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
@@ -81,7 +80,8 @@ SynNode *Parser::doubleArrayConstP
             {
                 *attr_intType_syn = _TYPE_ERROR;
             }
-            iniList->insert(iniList->end(), iniSubList->begin(), iniSubList->end());
+            iniList.insert(iniList.end(), iniSubList.begin(), iniSubList.end());
+            iniSubList.clear();
             i++;
         }
         if (!(symbol.type == TYPE_SYM::RBRACE))
@@ -136,7 +136,7 @@ SynNode *Parser::oneDdeclareP(int *attr_size_syn)
 }
 
 SynNode* Parser::referenceP(int* attr_intType_syn, bool isAssign, string& name, 
-                            bool* isScaler, string& i, string& j) {
+                            bool* isScaler, string& i, bool* isCon_i, string& j, bool* isCon_j) {
     string attr_strName_syn;
     int attr_intLine_syn;
     NonTerNode* node = new NonTerNode(TYPE_NTS::REFERENCE, false);
@@ -164,6 +164,7 @@ SynNode* Parser::referenceP(int* attr_intType_syn, bool isAssign, string& name,
             bool isCon;
             node->addChild(expressionP(&attr_subType_syn, &isCon, temVar1)); 
             i = temVar1;
+            *isCon_i = isCon;
             if (attr_subType_syn == _TYPE_CHAR)
             {
                 addErrorMessage(symbol.line, 'i', "数组下标为字符型");
@@ -186,6 +187,7 @@ SynNode* Parser::referenceP(int* attr_intType_syn, bool isAssign, string& name,
                 bool isCon;
                 node->addChild(expressionP(&attr_subType_syn, &isCon, temVar2)); 
                 j = temVar2;
+                *isCon_j = isCon;
                 if (attr_subType_syn == _TYPE_CHAR)
                 {
                     addErrorMessage(symbol.line, 'i', "数组下标为字符型");

@@ -116,18 +116,33 @@ string MipsGenerator::graspTemReg() {
     return "";
 }
 
+void MipsGenerator::freeReg(string regName) {
+    if (regName[1] == 't') {
+        int index = str2int(regName.substr(2, 1));
+        // string name = temRegister[index].varName;
+        // if (temVarOffsetMap.find(name) != temVarOffsetMap.end()) {
+        //     temVarOffsetMap.erase(name);
+        // }
+        temRegister[index].setFree();
+    }
+    else if (regName[1] == 's') {
+        int index = str2int(regName.substr(2, 1));
+        globalRegister[index].setFree();
+    }
+}
+
 void MipsGenerator::storeBack(string regName) { // has mem or no mem
     int ind = str2int(regName.substr(2, 1));
     if (regName[1] == 't') { // tem reg
         string varName = temRegister[ind].varName;
         if (varName[0] == '#'  && temRegister[ind].isBusyT) { // tem Var
             if (temVarOffsetMap.find(varName) != temVarOffsetMap.end()) { // tem var has memory
-                int offset = -temVarOffsetMap[varName];
-                addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", offset, true));
+                int offset = temVarOffsetMap[varName] - 4;
+                addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", -offset, true));
             }
             else { // tem var has no memory, allocate and store it
-                addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
                 addEntry(new MipsEntry(MIPS_INS::SW, regName, "$sp", "", 0, true));
+                addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
                 topOffset += 4;
                 temVarOffsetMap.insert(make_pair(varName, topOffset));
             }
@@ -139,17 +154,17 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
                 addEntry(new MipsEntry(MIPS_INS::SW, regName, "", "globalData", offset, true));
             }
             else { // local var
-                int offset = -sym->offset;
-                addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", offset, true));
+                int offset = sym->offset - 4;
+                addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", -offset, true));
             }
         }
         temRegister[ind].setFree();
     }
-    else if (regName[1] == 's') {// global reg
+    else if (regName[1] == 's') {// global reg, only contains local var
         string varName = globalRegister[ind].varName;
         SymTableEntry* sym = getSymByName(varName);
-        int offset = -sym->offset;
-        addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", offset, true));
+        int offset = sym->offset - 4;
+        addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", -offset, true));
         globalRegister[ind].setFree();
     }
 }
@@ -157,8 +172,8 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
 void MipsGenerator::loadValue(string name, string reg) {
     if (name[0] == '#') { // tem var
         if (temVarOffsetMap.find(name) != temVarOffsetMap.end()) {
-            int offset = -temVarOffsetMap[name];
-            addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", offset, true));
+            int offset = temVarOffsetMap[name] - 4;
+            addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", -offset, true));
         }
     }
     else {
@@ -169,8 +184,8 @@ void MipsGenerator::loadValue(string name, string reg) {
                 addEntry(new MipsEntry(MIPS_INS::LW, reg, "", "globalData", offset, true));
             }
             else { // local var
-                int offset = -(sym->offset); // stack goes downward
-                addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", offset, true));
+                int offset = sym->offset - 4; // stack goes downward
+                addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", -offset, true));
             }
         }
     }
@@ -213,13 +228,12 @@ void MipsGenerator::assignGloReg2LocVar(SymbolTable* symTab) {
         ArraySymEntry* arrSymEntry = dynamic_cast<ArraySymEntry*>(symEntry);
         if (arrSymEntry != nullptr) {
             int dim = arrSymEntry->getDim();
+            arrSymEntry->offset = offset;
             if (dim == 1) {
                 offset += 4 * arrSymEntry->getFIRST_SIZE();
-                arrSymEntry->offset = offset - 4;
             }
             else if (dim == 2) {
                 offset += 4 * arrSymEntry->getFIRST_SIZE() * arrSymEntry->getSECOND_SIZE();
-                arrSymEntry->offset = offset - 4;
             }
         }
         else if (symEntry->getCATE() != _CAT_FUNC && symEntry->getCATE() != _CAT_CONST) {
@@ -228,12 +242,12 @@ void MipsGenerator::assignGloReg2LocVar(SymbolTable* symTab) {
                 globalRegister[k].setVar(name);
             }
             offset += 4;
-            symEntry->offset = offset - 4;
+            symEntry->offset = offset;
             k++;
         }
     }
-    topOffset += offset - 4;
     if (symTab->symTable.size() > 0) {
+        topOffset += offset;
         addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", topOffset, true));
     }
     // TODO SUB SP
@@ -261,7 +275,7 @@ void MipsGenerator::GeneMipsCode() {
         #ifdef PRINT_ERROR_MESSAGE
             InterCodeEntry* line = inter;
             stringstream os;
-            std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC" };
+            std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC", "ARRINI" };
             os << INT_OP_STR[static_cast<int>(line->op)] << " ";
             if (line->op == INT_OP::FUNC) {
                 os << ": " << line->x->name << "\n";
@@ -311,26 +325,183 @@ void MipsGenerator::GeneMipsCode() {
                 break;
             }
             case INT_OP::ASSIGN: {
-                zr = getRegister(inter->z->name, false);
-                if (inter->x->isCon) {
-                    int imm = str2int(inter->x->name);
-                    addEntry(new MipsEntry(MIPS_INS::ADDIU, zr, "$0", "", imm, true));
+                InterCodeEntry_array* interArr = dynamic_cast<InterCodeEntry_array*>(inter);
+                if (interArr != nullptr) {
+                    SymTableEntry* sym = getSymByName(interArr->arrInRight ? interArr->rv->name : interArr->z->name);
+                    ArraySymEntry* symArr = dynamic_cast<ArraySymEntry*>(sym);
+                    #ifdef PRINT_ERROR_MESSAGE
+                        if (symArr == nullptr) {
+                            cout << "assign a scaler as an array";
+                        }
+                    #endif
+                    int offset = symArr->offset;
+                    int real_offset = -1;
+                    string real_offset_reg;
+                    // calculate offset
+                    if (symArr->getDim() == 1) {
+                        int con_x;
+                        bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                        bool imm_x = isConstX | inter->x->isCon;
+                        if (imm_x) {
+                            real_offset = (isConstX ? con_x : str2int(interArr->x->name)) * 4 + offset;
+                        }
+                        else {
+                            string temVar = "#temvar_array_assign";
+                            string reg_i = getRegister(temVar, false);
+                            addEntry(new MipsEntry(MIPS_INS::MOVE, temVar, getRegister(interArr->x->name, true), "", 0, false));
+                            addEntry(new MipsEntry(MIPS_INS::MUL, reg_i, reg_i, "", 4, true));
+                            addEntry(new MipsEntry(MIPS_INS::ADDIU, reg_i, reg_i, "", offset, true));
+                            real_offset_reg = reg_i;
+                        }
+                    }
+                    else { // 2
+                        int con_x;
+                        bool isConstX = inter->x->isCon ? false : checkIsConst(inter->x->name, &con_x);
+                        bool imm_x = isConstX | inter->x->isCon;
+                        int con_y;
+                        bool isConstY = inter->y->isCon ? false : checkIsConst(inter->y->name, &con_y);
+                        bool imm_y = isConstY | inter->y->isCon;
+                        if (imm_x && imm_y) {
+                            int x_value = isConstX ? con_x : str2int(interArr->x->name);
+                            int y_value = isConstY ? con_y : str2int(interArr->y->name);
+                            real_offset = (x_value * symArr->getFIRST_SIZE() + y_value) * 4 + offset;
+                        }
+                        else if (imm_x && !imm_y) {
+                            int x_value = isConstX ? con_x : str2int(interArr->x->name);
+                            int base_off = x_value * symArr->getFIRST_SIZE(); // i*first_size
+                            string temVar = "#temvar_array_assign";
+                            string reg_j = getRegister(temVar, false);
+                            string temReg = getRegister(interArr->y->name, true);
+                            addEntry(new MipsEntry(MIPS_INS::MOVE, reg_j, temReg, "", 0, false));
+                            addEntry(new MipsEntry(MIPS_INS::ADDIU, reg_j, reg_j, "", base_off, true)); // i*first_size + j
+                            addEntry(new MipsEntry(MIPS_INS::MUL, reg_j, reg_j, "", 4, true)); // (i*first_size + j)*4
+                            addEntry(new MipsEntry(MIPS_INS::ADDIU, reg_j, reg_j, "", offset, true));
+                            real_offset_reg = reg_j;
+                        }
+                        else if (!imm_x && imm_y) {
+                            int y_value = isConstY ? con_y : str2int(interArr->y->name);
+                            string temVar = "#temvar_array_assign";
+                            string reg_i = getRegister(temVar, false);
+                            string temReg = getRegister(interArr->x->name, true);
+                            int sec_off = y_value;
+                            addEntry(new MipsEntry(MIPS_INS::MOVE, reg_i, temReg, "", 0, false));
+                            addEntry(new MipsEntry(MIPS_INS::MUL, reg_i, reg_i, "", symArr->getFIRST_SIZE(), true)); // i * first_size
+                            addEntry(new MipsEntry(MIPS_INS::ADDIU, reg_i, reg_i, "", sec_off, true)); // i*first_size + j
+                            addEntry(new MipsEntry(MIPS_INS::MUL, reg_i, reg_i, "", 4, true)); // (i*first_size + j)*4
+                            addEntry(new MipsEntry(MIPS_INS::ADDIU, reg_i, reg_i, "", offset, true));
+                            real_offset_reg = reg_i;
+                        }
+                        else {
+                            string reg_i = getRegister(interArr->x->name, true);
+                            string reg_j = getRegister(interArr->y->name, true);
+                            string temVar = "#temvar_array_assign";
+                            string temReg = getRegister(temVar, false);
+                            addEntry(new MipsEntry(MIPS_INS::MOVE, temReg, reg_i, "", 0, false));
+                            addEntry(new MipsEntry(MIPS_INS::MUL, temReg, temReg, "", symArr->getFIRST_SIZE(), true)); // i * first_size
+                            addEntry(new MipsEntry(MIPS_INS::ADDU, temReg, temReg, reg_j, 0, false)); // i*first_size + j
+                            addEntry(new MipsEntry(MIPS_INS::MUL, temReg, temReg, "", 4, true)); // (i*first_size + j)*4
+                            addEntry(new MipsEntry(MIPS_INS::ADDIU, temReg, temReg, "", offset, true));
+                            real_offset_reg = temReg;
+                        }
+                    }
+                    // LW OR SW
+                    if (interArr->arrInRight) { // tem = arr[i][j]
+                        string temVar = "#temvar_array_assign_ano";
+                        string temReg = getRegister(temVar, false);
+                        if (real_offset == -1) { // offset is reg
+                            if (symArr->isGlobal) {
+                                addEntry(new MipsEntry(MIPS_INS::LW, temReg, real_offset_reg, "globalData", 0, true));
+                            }
+                            else {
+                                addEntry(new MipsEntry(MIPS_INS::SUBU, real_offset_reg, "$fp", real_offset_reg, 0, false));
+                                addEntry(new MipsEntry(MIPS_INS::LW, temReg, real_offset_reg, "", 0, true));
+                            }
+                                freeReg(real_offset_reg);
+                        }
+                        else { // offset is con
+                            if (symArr->isGlobal) {
+                                addEntry(new MipsEntry(MIPS_INS::LW, temReg, "", "globalData", real_offset, true));
+                            }
+                            else {
+                                addEntry(new MipsEntry(MIPS_INS::LW, temReg, "$fp", "", -real_offset, true));
+                            }
+                        }
+                        zr = getRegister(inter->z->name, false);
+                        addEntry(new MipsEntry(MIPS_INS::MOVE, zr, temReg, "", 0, false));
+                        freeReg(temReg);
+                    }
+                    else { // arr[i][j] = tem(rv)
+                        int con_rv;
+                        bool isConstRV = interArr->rv->isCon ? false : checkIsConst(interArr->rv->name, &con_rv);
+                        bool imm_rv = isConstRV | interArr->rv->isCon;
+                        string rvr;
+                        if (imm_rv) {
+                            int rv_int = -1;
+                            rv_int = isConstRV ? con_rv : str2int(interArr->rv->name);
+                            rvr = getRegister("#temvar_array_assign_ano", false);
+                            addEntry(new MipsEntry(MIPS_INS::LI, rvr, "", "", rv_int, true));
+                        }
+                        else {
+                            rvr = getRegister(interArr->rv->name, true);
+                        }
+                        if (real_offset == -1) { // offset is reg
+                            if (symArr->isGlobal) {
+                                addEntry(new MipsEntry(MIPS_INS::SW, rvr, real_offset_reg, "globalData", 0, true));
+                            }
+                            else {
+                                addEntry(new MipsEntry(MIPS_INS::SUBU, real_offset_reg, "$fp", real_offset_reg, 0, false));
+                                addEntry(new MipsEntry(MIPS_INS::SW, rvr, real_offset_reg, "", 0, true));
+                            }
+                            freeReg(real_offset_reg);
+                        }
+                        else { // offset is con
+                            if (symArr->isGlobal) {
+                                addEntry(new MipsEntry(MIPS_INS::SW, rvr, "", "globalData", real_offset, true));
+                            }
+                            else {
+                                addEntry(new MipsEntry(MIPS_INS::SW, rvr, "$fp", "", -real_offset, true));
+                            }
+                        }
+                        freeReg(rvr);
+                    }
                 }
                 else {
-                    int imm = 0;
-                    if (checkIsConst(inter->x->name, &imm)) {
-                            addEntry(new MipsEntry(MIPS_INS::LI, zr, "", "", imm, true));
+                    zr = getRegister(inter->z->name, false);
+                    if (inter->x->isCon) {
+                        int imm = str2int(inter->x->name);
+                        addEntry(new MipsEntry(MIPS_INS::ADDIU, zr, "$0", "", imm, true));
                     }
                     else {
-                        xr = getRegister(inter->x->name, true);
-                        addEntry(new MipsEntry(MIPS_INS::MOVE, zr, xr, "", 0, false));
+                        int imm = 0;
+                        if (checkIsConst(inter->x->name, &imm)) {
+                                addEntry(new MipsEntry(MIPS_INS::LI, zr, "", "", imm, true));
+                        }
+                        else {
+                            xr = getRegister(inter->x->name, true);
+                            addEntry(new MipsEntry(MIPS_INS::MOVE, zr, xr, "", 0, false));
+                        }
                     }
                 }
                 break;
             }
             case INT_OP::ARRINI: {
                 InterCodeEntry_arrDec* interArr = dynamic_cast<InterCodeEntry_arrDec*>(inter);
-                
+                string name = interArr->z->name;
+                SymTableEntry* sym = getSymByName(name);
+                vector<int> iniList = (interArr->iniList);
+                int offset = sym->offset;
+                for (int i = 0; i < iniList.size(); i++) {
+                    string temReg = getRegister("#temvar_arrini", false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", iniList[i], true));
+                    if (sym->isGlobal) {
+                        addEntry(new MipsEntry(MIPS_INS::SW, temReg, "", "globalData", offset + i * 4, true));
+                    }
+                    else {
+                        addEntry(new MipsEntry(MIPS_INS::SW, temReg, "$fp", "", -(offset + i * 4), true));
+                    }
+                    freeReg(temReg);
+                }
+                break;
             }
             case INT_OP::ADD: {
                 zr = getRegister(inter->z->name, true);
