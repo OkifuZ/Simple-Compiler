@@ -175,6 +175,9 @@ void MipsGenerator::loadValue(string name, string reg) {
             int offset = temVarOffsetMap[name] - 4;
             addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", -offset, true));
         }
+        else {
+            cout << "hey, you can't load a temVar has no memory allocated!" << endl;
+        }
     }
     else {
         SymTableEntry* sym = getSymByName(name);
@@ -269,15 +272,24 @@ void MipsGenerator::GeneMipsCode() {
     // assign $fp to $sp
     addEntry(new MipsEntry(MIPS_INS::MOVE, "$fp", "$sp", "", 0, false));
 
+    static bool firstFuncMeet = false;
     // code
     for (int i = 0; i < interCodeList.size(); i++) {
         InterCodeEntry* inter = interCodeList[i];
-        #ifdef PRINT_ERROR_MESSAGE1
+        #ifdef PRINT_ERROR_MESSAGE
             InterCodeEntry* line = inter;
             stringstream os;
-            std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", "SCAN", "PRINT", "J", "EXIT", "FUNC", "ENDFUNC", "ARRINI" };
+            std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", 
+                                                    "SCAN", "PRINT", "J", "EXIT", "FUNC", 
+                                                    "ENDFUNC", "ARRINI",
+                                                    "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL" };
             os << INT_OP_STR[static_cast<int>(line->op)] << " ";
             if (line->op == INT_OP::FUNC) {
+                if (!firstFuncMeet) { // first function meet, must jump to main
+                    // jump to main
+                    firstFuncMeet = true;
+                    addEntry(new MipsEntry(MIPS_INS::J, "", "main", "", 0, false));
+                }
                 os << ": " << line->x->name << "\n";
             }
             else {
@@ -313,11 +325,7 @@ void MipsGenerator::GeneMipsCode() {
         string zr="", xr="", yr="";
         switch(inter->op) {
             case INT_OP::FUNC: {
-                // global assign statement
-                if (inter->x->name == "main") {
-                    // jump to main
-                    addEntry(new MipsEntry(MIPS_INS::J, "", "main", "", 0, false));
-                }
+                
                 addEntry(new MipsEntry(MIPS_INS::LABEL, "", inter->x->name, "", 0, false));
                 curFuncName = inter->x->name;
                 SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
@@ -465,7 +473,7 @@ void MipsGenerator::GeneMipsCode() {
                         freeReg(rvr);
                     }
                 }
-                else {
+                else { // scaler
                     zr = getRegister(inter->z->name, false);
                     if (inter->x->isCon) {
                         int imm = str2int(inter->x->name);
@@ -474,7 +482,7 @@ void MipsGenerator::GeneMipsCode() {
                     else {
                         int imm = 0;
                         if (checkIsConst(inter->x->name, &imm)) {
-                                addEntry(new MipsEntry(MIPS_INS::LI, zr, "", "", imm, true));
+                            addEntry(new MipsEntry(MIPS_INS::LI, zr, "", "", imm, true));
                         }
                         else {
                             xr = getRegister(inter->x->name, true);
