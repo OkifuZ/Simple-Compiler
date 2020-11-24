@@ -12,7 +12,8 @@
 enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN, 
                   SCAN, PRINT, J, EXIT, FUNC, 
                   ENDFUNC, ARRINI, 
-                  BLE, BLT, BGE, BGT, BNE, BEQ, LABEL};
+                  BLE, BLT, BGE, BGT, BNE, BEQ, LABEL,
+                  JAL, BEFCALL, ENDCALL, PARA, PUSH};
 
 class InterCodeEntry;
 class InterOprand;
@@ -54,7 +55,8 @@ private:
     std::vector<std::string> INT_OP_STR = {"ADD", "SUB", "MULT", "DIV", "ASSIGN", 
                                            "SCAN", "PRINT", "J", "EXIT", "FUNC", 
                                            "ENDFUNC", "ARRINI",
-                                           "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL"};
+                                           "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL",
+                                           "JAL", "BEFCALL", "ENDCALL", "PARA", "PUSH"};
 
 };
 

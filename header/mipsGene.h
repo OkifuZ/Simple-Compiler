@@ -20,7 +20,7 @@ enum class MIPS_INS{
     LW, SW,
     SYSCALL, 
     DATASEG, TEXTSEG, STRINGSEG, SPACE, LABEL, 
-    BNE, BEQ, BLE, BLT, BGE, BGT,
+    BNE, BEQ, BLE, BLT, BGE, BGT, JR,
     DEBUG
 };
 
@@ -119,13 +119,20 @@ private:
     int prevPos = 0;
     std::string graspTemReg();
 
-    void storeBack(std::string reg);
+    void storeBack(std::string reg, bool allocate, bool fake);
     void loadValue(std::string name, std::string reg);
     int varInTemRegister(std::string name);
     int varInGloRegister(std::string name);
+    int varInARegister(std::string name);
 
     void assignGloReg2LocVar(SymbolTable* sym);
     std::string getNameByReg(std::string reg);
+
+    void storeGloRegOfCaller(SymbolTable* symTab);
+    int callerLocalVarInReg = 0;
+    void restoreGloRegOfCaller(SymbolTable* symTab);
+    void storeCallerTemReg();
+    void storeCallerAReg();
 
     std::string curFuncName = "global";
     int topOffset = 0; // always >= 0

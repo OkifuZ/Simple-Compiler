@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <tuple>
 
 /*CLASS: PARSER*/
 
@@ -706,6 +707,7 @@ inline SynNode *Parser::arguListP(int *attr_num_syn, FuncSymEntry *func)
         addSymbolEntry(
             new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX()));
         func->addParaType(attr_type_tem);
+        intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
         n++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
@@ -720,6 +722,7 @@ inline SynNode *Parser::arguListP(int *attr_num_syn, FuncSymEntry *func)
             addSymbolEntry(
                 new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX()));
             func->addParaType(attr_type_tem);
+            intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
             n++;
         }
     }
@@ -737,10 +740,10 @@ SynNode *Parser::refuncDefineP()
     {
         addErrorMessage(attr_line, 'b', "有返回值函数名字重复定义");
     }
-    envTable.addTable(attr_strName);
     intermediate->addInterCode(INT_OP::FUNC, "", _INV, attr_strName, _INV, false, "", _INV, false);
     FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_cate, attr_type, 0);
     addSymbolEntry(symFUNC);
+    envTable.addTable(attr_strName);
     attr_line = symbol.line;
     if (symbol.type == TYPE_SYM::LPARENT)
     {
@@ -803,9 +806,10 @@ SynNode *Parser::nonrefuncDefineP()
         {
             addErrorMessage(attr_line, 'b', "有返回值函数名字重复定义");
         }
-        envTable.addTable(attr_strName);
+        intermediate->addInterCode(INT_OP::FUNC, "", _INV, attr_strName, _INV, false, "", _INV, false);
         FuncSymEntry *symFUNC = new FuncSymEntry(attr_strName, attr_cate, attr_line, 0);
         addSymbolEntry(symFUNC);
+        envTable.addTable(attr_strName);
         attr_line = symbol.line;
         if (symbol.type == TYPE_SYM::LPARENT)
         {
@@ -894,7 +898,8 @@ inline SynNode *Parser::callFuncSenP(int* attr_intType_syn)
     else {
         printPos(88278);
     }
-    
+    intermediate->addInterCode(INT_OP::JAL, "", _INV, attr_strName, _INV, false, "", _INV, false);
+    intermediate->addInterCode(INT_OP::ENDCALL, "", _INV, attr_strName, func->getTYPE(), false, "", _INV, false);
     return node;
 }
 
@@ -903,6 +908,7 @@ inline SynNode *Parser::valueArgueListP(FuncSymEntry *func)
     int attr_argnum = (func == nullptr? 0 : func->getARGNUM());
     int n = 0, attr_type_tem, attr_intLine = -1, attr_value_tem;
     NonTerNode *node = new NonTerNode(TYPE_NTS::VALUE_ARGLIST, true);
+    vector<tuple<string, int, bool>> argNameList;
     if (symbol.type == TYPE_SYM::PLUS ||
         symbol.type == TYPE_SYM::MINU ||
         symbol.type == TYPE_SYM::IDENFR ||
@@ -916,6 +922,7 @@ inline SynNode *Parser::valueArgueListP(FuncSymEntry *func)
         node->addChild(expressionP(&attr_type_tem, &isCon_tem, temVar));
         if (func == nullptr) {
             // do nothing
+            cout << "a null func!" << endl;
         }
         else if (func->getParaTypeList().empty() || n >= attr_argnum)
         {
@@ -925,6 +932,7 @@ inline SynNode *Parser::valueArgueListP(FuncSymEntry *func)
         {
             addErrorMessage(symbol.line, 'e', "函数调用参数类型不匹配");
         }
+        argNameList.push_back(make_tuple(temVar, attr_type_tem, isCon_tem));
         n++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
@@ -943,12 +951,19 @@ inline SynNode *Parser::valueArgueListP(FuncSymEntry *func)
             {
                 addErrorMessage(symbol.line, 'e', "函数调用参数类型不匹配");
             }
+            argNameList.push_back(make_tuple(temVar, attr_type_tem, isCon_tem));
             n++;
         }
     }
     if (attr_argnum != n)
     {
         addErrorMessage(symbol.line, 'd', "函数调用个数不匹配");
+    }
+    intermediate->addInterCode(INT_OP::BEFCALL, "", _INV, func->name, func->type, false, "", _INV, false);
+    int k = 0;
+    for (auto iter: argNameList) {
+        intermediate->addInterCode(INT_OP::PUSH, func->getName(), func->getTYPE(), get<0>(iter), get<1>(iter), get<2>(iter), int2str(k), _INV, false);
+        k++;
     }
     return node;
 }

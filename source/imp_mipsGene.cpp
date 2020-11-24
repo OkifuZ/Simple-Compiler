@@ -40,6 +40,15 @@ int MipsGenerator::varInGloRegister(string name) {
     return -1;
 }
 
+int MipsGenerator::varInARegister(string name) {
+    for (int i = 0; i < 4; i++) {
+        if (aRegister[i].varName == name) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 string MipsGenerator::getRegister(string name, bool load) {
     if (name[0] == '#') {
         int i = varInTemRegister(name); 
@@ -59,7 +68,6 @@ string MipsGenerator::getRegister(string name, bool load) {
             else { // no empty temReg
                 reg = graspTemReg();
                 int ind = str2int(reg.substr(2, 1));
-                storeBack(reg);
                 temRegister[ind].setVar(name);
                 if (load) {
                     loadValue(name, reg);
@@ -68,41 +76,71 @@ string MipsGenerator::getRegister(string name, bool load) {
             }
         }
     }
-    else { // local var or global var
-        int i = varInGloRegister(name);
-        if (i != -1) {  // local var in gloReg
-            return globalRegister[i].regName;
+    else { // local var or global var or formal arg
+        SymTableEntry* symEnt = getSymByName(name);
+        FormalVarSymEntry* forEnt = dynamic_cast<FormalVarSymEntry*>(symEnt);
+        if (forEnt != nullptr) { // formal arg
+            int i = varInARegister(name);
+            if (i != -1) {  // 0th,1st,2nd,3rd arg
+                return aRegister[i].regName;
+            }
+            else { // 4th ... arg
+                string reg = getEmptyTemReg();
+                if (reg != "") { // has empty temReg
+                    int ind = str2int(reg.substr(2, 1));
+                    temRegister[ind].setVar(name);
+                    if (load) {
+                        loadValue(name, reg);
+                    }
+                    return reg;
+                }
+                else { // no empty temReg
+                    reg = graspTemReg();
+                    int ind = str2int(reg.substr(2, 1));
+                    temRegister[ind].setVar(name);
+                    if (load) {
+                        loadValue(name, reg);
+                    }
+                    return reg;
+                }
+            }
         }
-        else { // local var not in gloReg, i.e. globalReg is full(pre assigned) 
-            int i = varInTemRegister(name);
-            if (i != -1) {
-                return temRegister[i].regName;
+        else { // local or global var
+            int i = varInGloRegister(name);
+            if (i != -1) {  // local var in gloReg
+                return globalRegister[i].regName;
             }
-            string reg = getEmptyTemReg();
-            if (reg != "") { // has empty temReg
-                int ind = str2int(reg.substr(2, 1));
-                temRegister[ind].setVar(name);
-                if (load) {
-                    loadValue(name, reg);
+            else { // local var not in gloReg, i.e. globalReg is full(pre assigned) 
+                int i = varInTemRegister(name);
+                if (i != -1) {
+                    return temRegister[i].regName;
                 }
-                return reg;
-            }
-            else { // no empty temReg
-                reg = graspTemReg();
-                int ind = str2int(reg.substr(2, 1));
-                storeBack(reg);
-                temRegister[ind].setVar(name);
-                if (load) {
-                    loadValue(name, reg);
+                string reg = getEmptyTemReg();
+                if (reg != "") { // has empty temReg
+                    int ind = str2int(reg.substr(2, 1));
+                    temRegister[ind].setVar(name);
+                    if (load) {
+                        loadValue(name, reg);
+                    }
+                    return reg;
                 }
-                return reg;
+                else { // no empty temReg
+                    reg = graspTemReg();
+                    int ind = str2int(reg.substr(2, 1));
+                    temRegister[ind].setVar(name);
+                    if (load) {
+                        loadValue(name, reg);
+                    }
+                    return reg;
+                }
             }
         }
     }
 }
 
 string MipsGenerator::graspTemReg() {
-    for (int i = prevPos; i < 10; i++) {
+    int i;
+    for (i = prevPos; i < 10; i++) {
         if (usingInCurInter.find("$t"+int2str(i)) != usingInCurInter.end()) {
             continue;
         }
@@ -110,13 +148,14 @@ string MipsGenerator::graspTemReg() {
             string reg = "$t"+int2str(i);
             usingInCurInter.insert(reg);
             prevPos = (i+1)%9;
+            storeBack(reg, false, false);
             return reg;
         }
     }
     return "";
 }
 
-void MipsGenerator::freeReg(string regName) {
+void MipsGenerator::freeReg(string regName) { // freeReg, won't store back
     if (regName[1] == 't') {
         int index = str2int(regName.substr(2, 1));
         // string name = temRegister[index].varName;
@@ -131,9 +170,19 @@ void MipsGenerator::freeReg(string regName) {
     }
 }
 
-void MipsGenerator::storeBack(string regName) { // has mem or no mem
-    int ind = str2int(regName.substr(2, 1));
-    if (regName[1] == 't') { // tem reg
+void MipsGenerator::storeBack(string regName, bool allocate, bool fake) { // has mem or no mem
+    
+    if (fake) {
+        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
+        topOffset += 4;
+    }
+    else if (allocate) {
+        addEntry(new MipsEntry(MIPS_INS::SW, regName, "$sp", "", 0, true)); // store $fp of caller
+        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
+        topOffset += 4/*$ra*/;
+    }
+    else if (regName[1] == 't') { // tem reg
+        int ind = str2int(regName.substr(2, 1));
         string varName = temRegister[ind].varName;
         if (varName[0] == '#'  && temRegister[ind].isBusyT) { // tem Var
             if (temVarOffsetMap.find(varName) != temVarOffsetMap.end()) { // tem var has memory
@@ -161,12 +210,14 @@ void MipsGenerator::storeBack(string regName) { // has mem or no mem
         temRegister[ind].setFree();
     }
     else if (regName[1] == 's') {// global reg, only contains local var
+        int ind = str2int(regName.substr(2, 1));
         string varName = globalRegister[ind].varName;
         SymTableEntry* sym = getSymByName(varName);
         int offset = sym->offset - 4;
         addEntry(new MipsEntry(MIPS_INS::SW, regName, "$fp", "", -offset, true));
         globalRegister[ind].setFree();
     }
+    
 }
 
 void MipsGenerator::loadValue(string name, string reg) {
@@ -181,14 +232,21 @@ void MipsGenerator::loadValue(string name, string reg) {
     }
     else {
         SymTableEntry* sym = getSymByName(name);
-        if (sym!= nullptr) { // global var
-            if (sym->isGlobal) {
+        if (sym!= nullptr) { 
+            if (sym->isGlobal) { // global var
                 int offset = sym->offset; // dataseg goes upward
                 addEntry(new MipsEntry(MIPS_INS::LW, reg, "", "globalData", offset, true));
             }
-            else { // local var
-                int offset = sym->offset - 4; // stack goes downward
-                addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", -offset, true));
+            else { // local var or formal arg
+                FormalVarSymEntry* forEnt = dynamic_cast<FormalVarSymEntry*>(sym);
+                if (forEnt != nullptr) { // formal arg
+                    int offset = sym->offset; // TODO
+                    addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", offset, true));
+                }
+                else {
+                    int offset = sym->offset - 4; // stack goes downward
+                    addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", -offset, true));
+                }
             }
         }
     }
@@ -240,22 +298,98 @@ void MipsGenerator::assignGloReg2LocVar(SymbolTable* symTab) {
             }
         }
         else if (symEntry->getCATE() != _CAT_FUNC && symEntry->getCATE() != _CAT_CONST) {
-            string name = symEntry->getName();
-            if (k < 8) {
-                globalRegister[k].setVar(name);
+            FormalVarSymEntry* argSym = dynamic_cast<FormalVarSymEntry*>(symEntry);
+            if (argSym == nullptr) { // is not formal arguement
+                string name = symEntry->getName();
+                if (k < 8) {
+                    globalRegister[k].setFree();
+                    globalRegister[k].setVar(name);
+                }
+                offset += 4;
+                symEntry->offset = topOffset + offset;
+                k++;
             }
-            offset += 4;
-            symEntry->offset = offset;
-            k++;
         }
     }
-    if (symTab->symTable.size() > 0) {
+    if (symTab->symTable.size() > 0 && offset > 0) {
         topOffset += offset;
-        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", topOffset, true));
+        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", offset, true));
     }
-    // TODO SUB SP
 }
-// TODO CONST
+
+/*
+    | argList     | 
+    | $ra         | 
+    $fp/$sp0        
+    | caller reg  |  
+    | callee var  |
+    | callee tem  |
+    $sp cur
+*/
+
+void MipsGenerator::storeGloRegOfCaller(SymbolTable* symTab) {
+    int k = 0;
+    for (int i = 0; i < symTab->symTable.size(); i++) {
+        SymTableEntry* symEntry = symTab->symTable[i];
+        ArraySymEntry* arrSymEntry = dynamic_cast<ArraySymEntry*>(symEntry);
+        if (arrSymEntry != nullptr) {
+            // array has no globalRegister
+            // pass
+        }
+        else if (symEntry->getCATE() != _CAT_FUNC && symEntry->getCATE() != _CAT_CONST) {
+            // local scaler
+            FormalVarSymEntry* argSym = dynamic_cast<FormalVarSymEntry*>(symEntry);
+            if (argSym == nullptr) { // is not formal arguement
+                string name = symEntry->getName();
+                if (k < 8) { // callee will use this register 
+                    /* 
+                        caller or caller's caller may have taken this GloReg, 
+                        callee has to store it (dobby has to stop it!) 
+                    */
+                    storeBack(globalRegister[k].regName, true, false);
+                }
+                k++;
+            }
+        }
+    }
+    topOffset +=  k*4/*GloReg*/;
+}
+
+void MipsGenerator::restoreGloRegOfCaller(SymbolTable* symTab) {
+    int k = 0;
+    for (int i = 0; i < symTab->symTable.size(); i++) {
+        SymTableEntry* symEntry = symTab->symTable[i];
+        ArraySymEntry* arrSymEntry = dynamic_cast<ArraySymEntry*>(symEntry);
+        if (arrSymEntry != nullptr) {
+            // array has no globalRegister
+            // pass
+        }
+        else if (symEntry->getCATE() != _CAT_FUNC && symEntry->getCATE() != _CAT_CONST) {
+            // local scaler
+            FormalVarSymEntry* argSym = dynamic_cast<FormalVarSymEntry*>(symEntry);
+            if (argSym == nullptr) { // is not formal arguement
+                string name = symEntry->getName();
+                if (k < 8) { // callee has used this register
+                    addEntry(new MipsEntry(MIPS_INS::LW, globalRegister[k].regName, "$fp", "", -(k+1)*4, true)); // k+1 for $ra
+                }
+                k++;
+            }
+        }
+    }
+}
+
+void MipsGenerator::storeCallerTemReg() {
+    for (int i = 0; i < 10; i++) {
+        storeBack("$t" + int2str(i), true, false);
+    }
+}
+
+void MipsGenerator::storeCallerAReg() {
+    for (int i = 0; i < 4; i++) {
+        storeBack("$a" + int2str(i), true, false);
+    }
+}
+
 void MipsGenerator::GeneMipsCode() {
     addEntry(new MipsEntry(MIPS_INS::DATASEG, "", "", "", 0, false));
     // global vars
@@ -282,7 +416,8 @@ void MipsGenerator::GeneMipsCode() {
             std::vector<std::string> INT_OP_STR = { "ADD", "SUB", "MULT", "DIV", "ASSIGN", 
                                                     "SCAN", "PRINT", "J", "EXIT", "FUNC", 
                                                     "ENDFUNC", "ARRINI",
-                                                    "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL" };
+                                                    "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL",
+                                                    "JAL", "BEFCALL", "ENDCALL", "PARA", "PUSH"};
             os << INT_OP_STR[static_cast<int>(line->op)] << " ";
             if (line->op == INT_OP::FUNC) {
                 if (!firstFuncMeet) { // first function meet, must jump to main
@@ -325,11 +460,53 @@ void MipsGenerator::GeneMipsCode() {
         string zr="", xr="", yr="";
         switch(inter->op) {
             case INT_OP::FUNC: {
-                
-                addEntry(new MipsEntry(MIPS_INS::LABEL, "", inter->x->name, "", 0, false));
+                addEntry(new MipsEntry(MIPS_INS::LABEL, "", inter->x->name, "", 0, false)); // add label
                 curFuncName = inter->x->name;
                 SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
-                assignGloReg2LocVar(funcTab);
+                if (inter->x->name != "main") { // main has nothing related with $ra, caller's GloReg
+                    storeBack("$ra", true, false);
+                    storeGloRegOfCaller(funcTab); // store callee used global register which caller has taken up
+                }
+                assignGloReg2LocVar(funcTab); // allocate memory space of callee's local variable
+                break;
+            }
+            case INT_OP::ENDFUNC: {
+                if (inter->x->name != "main") {
+                    curFuncName = inter->x->name;
+                    SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
+                    restoreGloRegOfCaller(funcTab);
+                    addEntry(new MipsEntry(MIPS_INS::LW, "$ra", "$fp", "", 0, true)); // restore $ra
+                    addEntry(new MipsEntry(MIPS_INS::MOVE, "$sp", "$fp", "", 0, false)); // set $fp to $sp
+                    addEntry(new MipsEntry(MIPS_INS::JR, "", "$ra", "", 0, false)); // jump to $ra
+                }
+                topOffset = 0;
+                break;
+            }
+            case INT_OP::BEFCALL: {
+                string funcName = line->x->name;
+                SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
+                // todo store back temReg
+                storeCallerTemReg();
+                storeCallerAReg();
+                storeBack("$fp", true, false);
+                break;
+            }
+            case INT_OP::PUSH: {
+                string valueArgName = line->x->name;
+                int num = str2int(line->y->name);
+                string temReg = getRegister(valueArgName, true);
+                if (num <= 3) {
+                    // a0 ... a3
+                    addEntry(new MipsEntry(MIPS_INS::MOVE, "$a"+int2str(num), temReg, "", 0, false));
+                    storeBack("", false, true); // take place but nothing stored
+                }
+                else {
+                    storeBack(temReg, true, false);
+                }
+                break;
+            }
+            case INT_OP::ENDCALL: {
+                // TODO
                 break;
             }
             case INT_OP::ASSIGN: {
@@ -614,9 +791,10 @@ void MipsGenerator::GeneMipsCode() {
                 else if (isImm_x && !isImm_y) { // z = 5 * y
                     int xv = isConstX ? con_x : str2int(inter->x->name);
                     yr = getRegister(inter->y->name, true);
-                    string tem = getRegister("#temp_use_inDiv", false);
-                    addEntry(new MipsEntry(MIPS_INS::LI, tem, "", "", xv, true)); // tem = 5
-                    addEntry(new MipsEntry(MIPS_INS::DIVU, zr, tem, yr, 0, false)); // z = tem / x
+                    string temReg = getRegister("#temp_use_inDiv", false);
+                    addEntry(new MipsEntry(MIPS_INS::LI, temReg, "", "", xv, true)); // tem = 5
+                    addEntry(new MipsEntry(MIPS_INS::DIVU, zr, temReg, yr, 0, false)); // z = tem / x
+                    freeReg(temReg);
                 }
                 else if (!isImm_x && isImm_y) {
                     xr = getRegister(inter->x->name, true);
@@ -998,6 +1176,9 @@ void MipsGenerator::printMipsCode(ostream& os) {
                 break;
             case MIPS_INS::LABEL: // x = label
                 os << "\n" <<line->x << ": " << "\n";
+                break;
+            case MIPS_INS::JR:
+                os << "jr" << " " << line->x << "\n";
                 break;
             case MIPS_INS::LI:
                 os << "li" << " " << line->z << ", " << line->immediate << "\n";
