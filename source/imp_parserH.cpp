@@ -703,9 +703,12 @@ inline SynNode *Parser::arguListP(int *attr_num_syn, FuncSymEntry *func)
         int attr_type_tem;
         node->addChild(typeIdenP(&attr_type_tem));
         node->addChild(idenP(attr_strName, &attr_line));
+        int argId = 0;
         // 这里应该不用检查重复
         addSymbolEntry(
-            new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX()));
+            new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX(), argId)
+        );
+        argId++;
         func->addParaType(attr_type_tem);
         intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
         n++;
@@ -720,7 +723,9 @@ inline SynNode *Parser::arguListP(int *attr_num_syn, FuncSymEntry *func)
                 addErrorMessage(attr_line, 'b', "参数列表中重复定义名字");
             }
             addSymbolEntry(
-                new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX()));
+                new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX(), argId)
+            );
+            argId++;
             func->addParaType(attr_type_tem);
             intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
             n++;

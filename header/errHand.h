@@ -76,14 +76,16 @@ public:
 
 class FormalVarSymEntry : public ScalerSymEntry {
 public:
-	FormalVarSymEntry(std::string name, int cate, int type, int parFuncPos_):
-		ScalerSymEntry(name, cate, type), parFuncPos(parFuncPos_) {}
+	FormalVarSymEntry(std::string name, int cate, int type, int parFuncPos_, int argId_):
+		ScalerSymEntry(name, cate, type), parFuncPos(parFuncPos_), argId(argId_) {}
 
 	int getPAR_FUNC_POS() { return parFuncPos; }
 	void setPAR_FUNC_POS(int pos) { parFuncPos = pos; }
+	int argId = -1;
 
 private:
 	int parFuncPos = -1;
+	
 };
 
 class FuncSymEntry : public SymTableEntry {

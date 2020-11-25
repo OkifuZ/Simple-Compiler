@@ -240,7 +240,7 @@ void MipsGenerator::loadValue(string name, string reg) {
             else { // local var or formal arg
                 FormalVarSymEntry* forEnt = dynamic_cast<FormalVarSymEntry*>(sym);
                 if (forEnt != nullptr) { // formal arg
-                    int offset = sym->offset; // TODO
+                    int offset = forEnt->argId * 4 + 4; // TODO
                     addEntry(new MipsEntry(MIPS_INS::LW, reg, "$fp", "", offset, true));
                 }
                 else {
@@ -384,10 +384,41 @@ void MipsGenerator::storeCallerTemReg() {
     }
 }
 
+void MipsGenerator::restoreCallerTemReg() {
+    for (int i = 0; i < 10; i++) {
+        addEntry(new MipsEntry(MIPS_INS::LW, "$t"+int2str(9 - i), "$sp", "", (i+1)*4, true));
+    }
+    addEntry(new MipsEntry(MIPS_INS::ADDIU, "$sp", "$sp", "", 9*4, true));
+}
+
 void MipsGenerator::storeCallerAReg() {
     for (int i = 0; i < 4; i++) {
         storeBack("$a" + int2str(i), true, false);
     }
+}
+
+void MipsGenerator::restoreCallerAReg() {
+    for (int i = 0; i < 4; i++) {
+        addEntry(new MipsEntry(MIPS_INS::LW, "$a"+int2str(3 - i), "$sp", "", (i+1)*4, true));
+    }
+    addEntry(new MipsEntry(MIPS_INS::ADDIU, "$sp", "$sp", "", 4*4, true));
+}
+
+void MipsGenerator::pushReg(string reg, bool fake) {
+    if (fake) {
+        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
+        topOffset += 4;
+    }
+    else {
+        addEntry(new MipsEntry(MIPS_INS::SW, reg, "$sp", "", 0, true)); 
+        addEntry(new MipsEntry(MIPS_INS::SUBU, "$sp", "$sp", "", 4, true));
+        topOffset += 4;
+    }
+}
+
+void MipsGenerator::popReg(string reg) {
+    addEntry(new MipsEntry(MIPS_INS::ADDIU, "$sp", "$sp", "", 4, true));
+    addEntry(new MipsEntry(MIPS_INS::LW, reg, "$sp", "", 0, false));
 }
 
 void MipsGenerator::GeneMipsCode() {
@@ -465,6 +496,7 @@ void MipsGenerator::GeneMipsCode() {
                 SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
                 if (inter->x->name != "main") { // main has nothing related with $ra, caller's GloReg
                     storeBack("$ra", true, false);
+                    storeBack("$fp", true, false);
                     storeGloRegOfCaller(funcTab); // store callee used global register which caller has taken up
                 }
                 assignGloReg2LocVar(funcTab); // allocate memory space of callee's local variable
@@ -475,17 +507,16 @@ void MipsGenerator::GeneMipsCode() {
                     curFuncName = inter->x->name;
                     SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
                     restoreGloRegOfCaller(funcTab);
-                    addEntry(new MipsEntry(MIPS_INS::LW, "$ra", "$fp", "", 0, true)); // restore $ra
+                    addEntry(new MipsEntry(MIPS_INS::LW, "$ra", "$fp", "", 4, true)); // restore $ra
                     addEntry(new MipsEntry(MIPS_INS::MOVE, "$sp", "$fp", "", 0, false)); // set $fp to $sp
+                    addEntry(new MipsEntry(MIPS_INS::LW, "$fp", "$fp", "", 0, true));
                     addEntry(new MipsEntry(MIPS_INS::JR, "", "$ra", "", 0, false)); // jump to $ra
                 }
                 topOffset = 0;
                 break;
             }
             case INT_OP::BEFCALL: {
-                string funcName = line->x->name;
-                SymbolTable* funcTab = env.getTableByFuncName(curFuncName);
-                // todo store back temReg
+                // store back temReg
                 storeCallerTemReg();
                 storeCallerAReg();
                 storeBack("$fp", true, false);
@@ -507,6 +538,20 @@ void MipsGenerator::GeneMipsCode() {
             }
             case INT_OP::ENDCALL: {
                 // TODO
+                string funcName = line->x->name;
+                SymTableEntry* tabEnt = env.root->getSymByName(funcName);
+                FuncSymEntry* funcTabEnt = dynamic_cast<FuncSymEntry*>(tabEnt);
+                if (funcTabEnt != nullptr) {
+                    
+                    // pop arglist
+                    addEntry(new MipsEntry(MIPS_INS::ADDIU, "$sp", "$sp", "", funcTabEnt->getARGNUM()*4, true));
+                    restoreCallerAReg();
+                    restoreCallerTemReg();
+                }
+                else {
+                    cout << "endcall a non func" << endl;
+                }
+                
                 break;
             }
             case INT_OP::ASSIGN: {

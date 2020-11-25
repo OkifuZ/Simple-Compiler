@@ -132,7 +132,12 @@ private:
     int callerLocalVarInReg = 0;
     void restoreGloRegOfCaller(SymbolTable* symTab);
     void storeCallerTemReg();
+    void restoreCallerTemReg();
     void storeCallerAReg();
+    void restoreCallerAReg();
+
+    void pushReg(std::string reg, bool fake false);
+    void popReg(std::string reg);
 
     std::string curFuncName = "global";
     int topOffset = 0; // always >= 0
