@@ -574,6 +574,7 @@ inline SynNode *Parser::factorP(int* attr_intType_syn, bool* isCon_syn, string& 
         node->addChild(new TerNode(symbol));
         nextSym();
         node->addChild(expressionP(attr_intType_syn, isCon_syn, facVar));
+        *attr_intType_syn = _TYPE_INT;
         if (symbol.type == TYPE_SYM::RPARENT)
         {
             node->addChild(new TerNode(symbol));

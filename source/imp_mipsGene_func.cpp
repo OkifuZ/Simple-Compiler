@@ -23,7 +23,7 @@ std::string MipsGenerator::getNameByReg(std::string reg) {
 
 int MipsGenerator::varInTemRegister(string name) {
     for (int i = 0; i < 10; i++) {
-        if (temRegister[i].varName == name) {
+        if (idenSame(temRegister[i].varName, name)) {
             return i;
         }
     }
@@ -32,7 +32,7 @@ int MipsGenerator::varInTemRegister(string name) {
 
 int MipsGenerator::varInGloRegister(string name) {
     for (int i = 0; i < 8; i++) {
-        if (globalRegister[i].varName == name) {
+        if (idenSame(globalRegister[i].varName, name)) {
             return i;
         }
     }
@@ -41,7 +41,7 @@ int MipsGenerator::varInGloRegister(string name) {
 
 int MipsGenerator::varInARegister(string name) {
     for (int i = 0; i < 4; i++) {
-        if (aRegister[i].varName == name) {
+        if (idenSame(aRegister[i].varName, name)) {
             return i;
         }
     }
@@ -189,7 +189,7 @@ void MipsGenerator::storeBack(string regName, bool noFree) { // has mem or no me
     // else 
     if (regName[1] == 't') { // tem reg
         int ind = str2int(regName.substr(2, 1));
-        if (!temRegister[ind].isBusyL && !temRegister[ind].isBusyT && temRegister[ind].varName == "") {
+        if (!temRegister[ind].isBusyL && !temRegister[ind].isBusyT && idenSame(temRegister[ind].varName, "")) {
             return;
         }
         string varName = temRegister[ind].varName;
@@ -236,7 +236,7 @@ void MipsGenerator::storeBack(string regName, bool noFree) { // has mem or no me
     }
     else if (regName[1] == 's') {// global reg, only contains local var
         int ind = str2int(regName.substr(2, 1));
-        if (!globalRegister[ind].isBusyL && !globalRegister[ind].isBusyT && globalRegister[ind].varName == "") {
+        if (!globalRegister[ind].isBusyL && !globalRegister[ind].isBusyT && idenSame(globalRegister[ind].varName, "")) {
             return;
         }
         string varName = globalRegister[ind].varName;
@@ -249,7 +249,7 @@ void MipsGenerator::storeBack(string regName, bool noFree) { // has mem or no me
     }
     else if (regName[1] == 'a') {
         int ind = str2int(regName.substr(2, 1));
-        if (!aRegister[ind].isBusyL && !aRegister[ind].isBusyT && aRegister[ind].varName == "") {
+        if (!aRegister[ind].isBusyL && !aRegister[ind].isBusyT && idenSame(aRegister[ind].varName, "")) {
             return;
         }
         string varName = aRegister[ind].varName;
@@ -269,7 +269,7 @@ void MipsGenerator::storeBack(string regName, bool noFree) { // has mem or no me
 }
 
 void MipsGenerator::loadValue(string name, string reg) {
-    if (name == "") {
+    if (idenSame(name, "")) {
         return;
     }
     if (name[0] == '#') { // tem var
@@ -351,7 +351,7 @@ void MipsGenerator::assignGloReg2LocVar(SymbolTable* symTab) {
         if (arrSymEntry != nullptr) {
             int dim = arrSymEntry->getDim();
             offset += 4;
-            arrSymEntry->offset = offset;
+            arrSymEntry->offset = topOffset + offset;
             if (dim == 1) {
                 offset += 4 * arrSymEntry->getFIRST_SIZE();
             }

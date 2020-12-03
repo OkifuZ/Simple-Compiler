@@ -89,7 +89,7 @@ void MipsGenerator::GeneMipsCode() {
                 if (inter->x->name != "main") { // main has nothing related with $ra, caller's GloReg
                     
                     // fresh topOffset
-                    topOffsetQue.push_back(topOffset);
+                    //topOffsetQue.push_back(topOffset);
                     topOffset = 0;
                     addEntry(new MipsEntry(MIPS_INS::MOVE, "$fp", "$sp", "", 0, false));
                     pushReg("$ra");
@@ -107,6 +107,7 @@ void MipsGenerator::GeneMipsCode() {
                 }
                 else { // main
                     // assign $fp to $sp
+                    topOffset = 0;
                     addEntry(new MipsEntry(MIPS_INS::MOVE, "$fp", "$sp", "", 0, false));
                 }
                 assignGloReg2LocVar(funcTab); // allocate memory space of callee's local variable
@@ -120,8 +121,8 @@ void MipsGenerator::GeneMipsCode() {
                     addEntry(new MipsEntry(MIPS_INS::LW, "$ra", "$fp", "", 0, true)); // restore $ra, no need to change sp and topoffset
                     addEntry(new MipsEntry(MIPS_INS::MOVE, "$sp", "$fp", "", 0, false)); // set $fp to $sp
                     addEntry(new MipsEntry(MIPS_INS::JR, "", "$ra", "", 0, false)); // jump to $ra
-                    topOffset = topOffsetQue.back();
-                    topOffsetQue.pop_back();
+                    //topOffset = topOffsetQue.back();
+                    //topOffsetQue.pop_back();
                     freeAllTemReg(); // !
                     freeAllGloReg();
                     freeAllAreg();
@@ -331,6 +332,7 @@ void MipsGenerator::GeneMipsCode() {
                                 addEntry(new MipsEntry(MIPS_INS::LW, temReg, real_offset_reg, "globalData", 0, true));
                             }
                             else {
+                                addEntry(new MipsEntry(MIPS_INS::SUBU, real_offset_reg, real_offset_reg, "", 4, true));
                                 addEntry(new MipsEntry(MIPS_INS::SUBU, real_offset_reg, "$fp", real_offset_reg, 0, false));
                                 addEntry(new MipsEntry(MIPS_INS::LW, temReg, real_offset_reg, "", 0, true));
                             }
@@ -341,22 +343,24 @@ void MipsGenerator::GeneMipsCode() {
                                 addEntry(new MipsEntry(MIPS_INS::LW, temReg, "", "globalData", real_offset, true));
                             }
                             else {
-                                addEntry(new MipsEntry(MIPS_INS::LW, temReg, "$fp", "", -real_offset, true));
+                                addEntry(new MipsEntry(MIPS_INS::LW, temReg, "$fp", "", -(real_offset-4), true));
                             }
                         }
                         zr = getRegister(inter->z->name, false, false);
                         addEntry(new MipsEntry(MIPS_INS::MOVE, zr, temReg, "", 0, false));
                         freeReg(temReg);
                     }
-                    else { // arr[i][j] = tem(rv)
+                    else { // arr[i][j] = rv
                         int con_rv;
                         bool isConstRV = interArr->rv->isCon ? false : checkIsConst(interArr->rv->name, &con_rv);
                         bool imm_rv = isConstRV | interArr->rv->isCon;
                         string rvr;
+                        bool isTem = false;
                         if (imm_rv) {
                             int rv_int = -1;
                             rv_int = isConstRV ? con_rv : str2int(interArr->rv->name);
                             rvr = getRegister("#&temvar_array_assign_ano", false, false);
+                            isTem = true;
                             addEntry(new MipsEntry(MIPS_INS::LI, rvr, "", "", rv_int, true));
                         }
                         else {
@@ -367,6 +371,7 @@ void MipsGenerator::GeneMipsCode() {
                                 addEntry(new MipsEntry(MIPS_INS::SW, rvr, real_offset_reg, "globalData", 0, true));
                             }
                             else {
+                                addEntry(new MipsEntry(MIPS_INS::SUBU, real_offset_reg, real_offset_reg, "", 4, true));
                                 addEntry(new MipsEntry(MIPS_INS::SUBU, real_offset_reg, "$fp", real_offset_reg, 0, false));
                                 addEntry(new MipsEntry(MIPS_INS::SW, rvr, real_offset_reg, "", 0, true));
                             }
@@ -377,10 +382,12 @@ void MipsGenerator::GeneMipsCode() {
                                 addEntry(new MipsEntry(MIPS_INS::SW, rvr, "", "globalData", real_offset, true));
                             }
                             else {
-                                addEntry(new MipsEntry(MIPS_INS::SW, rvr, "$fp", "", -real_offset, true));
+                                addEntry(new MipsEntry(MIPS_INS::SW, rvr, "$fp", "", -(real_offset-4), true));
                             }
                         }
-                        freeReg(rvr);
+                        if (isTem) {
+                            freeReg(rvr);
+                        }
                     }
                 }
                 else { // scaler
@@ -419,7 +426,7 @@ void MipsGenerator::GeneMipsCode() {
                         addEntry(new MipsEntry(MIPS_INS::SW, temReg, "", "globalData", offset + i * 4, true));
                     }
                     else {
-                        addEntry(new MipsEntry(MIPS_INS::SW, temReg, "$fp", "", -(offset + i * 4), true));
+                        addEntry(new MipsEntry(MIPS_INS::SW, temReg, "$fp", "", -(offset + i * 4 - 4), true));
                     }
                     freeReg(temReg);
                 }
@@ -429,7 +436,7 @@ void MipsGenerator::GeneMipsCode() {
                 // if you don't load, and xr or yr is the same as zr, then things goes wrong
                 // any solutions?
                 // let me see, if 
-                if (inter->z->name == inter->x->name || inter->z->name == inter->y->name) {
+                if (idenSame(inter->z->name, inter->x->name) || idenSame(inter->z->name, inter->y->name)) {
                     zr = getRegister(inter->z->name, true, false);
                 }
                 else {
@@ -463,7 +470,7 @@ void MipsGenerator::GeneMipsCode() {
                 break;
             }
             case INT_OP::SUB: {
-                if (inter->z->name == inter->x->name || inter->z->name == inter->y->name) {
+                if (idenSame(inter->z->name, inter->x->name) || idenSame(inter->z->name, inter->y->name)) {
                     zr = getRegister(inter->z->name, true, false);
                 }
                 else {
@@ -498,7 +505,7 @@ void MipsGenerator::GeneMipsCode() {
                 break;
             }
             case INT_OP::MULT: {
-                if (inter->z->name == inter->x->name || inter->z->name == inter->y->name) {
+                if (idenSame(inter->z->name, inter->x->name) || idenSame(inter->z->name, inter->y->name)) {
                     zr = getRegister(inter->z->name, true, false);
                 }
                 else {
@@ -532,7 +539,7 @@ void MipsGenerator::GeneMipsCode() {
                 break;
             }
             case INT_OP::DIV: {
-                if (inter->z->name == inter->x->name || inter->z->name == inter->y->name) {
+                if (idenSame(inter->z->name, inter->x->name) || idenSame(inter->z->name, inter->y->name)) {
                     zr = getRegister(inter->z->name, true, false);
                 }
                 else {

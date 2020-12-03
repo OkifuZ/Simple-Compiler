@@ -17,17 +17,17 @@ void MipsGenerator::printMipsCode(ostream& os) {
                 os << "\n# " << line->x << "\n";
                 break;
             case MIPS_INS::ADDU:
-                os << "add" << " " << line->z << ", " << line->x << ", " << line->y << "\n";
+                os << "addu" << " " << line->z << ", " << line->x << ", " << line->y << "\n";
                 break;
             case MIPS_INS::ADDIU:
-                os << "addi" << " " << line->z << ", " << line->x << ", " << line->immediate << "\n";
+                os << "addiu" << " " << line->z << ", " << line->x << ", " << line->immediate << "\n";
                 break;
             case MIPS_INS::SUBU:
                 if (line->hasImmediate) {
-                    os << "sub" << " " << line->z << ", " << line->x << ", " << line->immediate << "\n"; 
+                    os << "subu" << " " << line->z << ", " << line->x << ", " << line->immediate << "\n"; 
                 }
                 else {
-                    os << "sub" << " " << line->z << ", " << line->x << ", " << line->y << "\n";
+                    os << "subu" << " " << line->z << ", " << line->x << ", " << line->y << "\n";
                 }
                 break;
             case MIPS_INS::MOVE:

@@ -6,6 +6,21 @@
 
 using namespace std;
 
+string upperCase_tool(const string& s) {
+    string ans;
+    char c;
+    for (auto it = s.begin(); it != s.end(); it++) {
+        c = *it;
+        if (c <= 'z' && c >= 'a') c += 'A' - 'a';
+        ans += c;
+    }
+    return ans;
+}
+
+bool idenSame(string a, string b) {
+    return (upperCase_tool(a) == upperCase_tool(b));
+}
+
 int str2int(std::string s) {
     int ans = 0;
     char c;
