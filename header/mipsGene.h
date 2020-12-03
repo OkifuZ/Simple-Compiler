@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <queue>
 #include "InterCode.h"
 #include "tool.h"
 #include "parser.h"
@@ -21,6 +22,7 @@ enum class MIPS_INS{
     SYSCALL, 
     DATASEG, TEXTSEG, STRINGSEG, SPACE, LABEL, 
     BNE, BEQ, BLE, BLT, BGE, BGT, JR,
+    JAL, 
     DEBUG
 };
 
@@ -61,11 +63,15 @@ public:
 
     }
 
+    void preProcessing();
+
     void GeneMipsCode();
 
     void printMipsCode(std::ostream& os);
 
     SymTableEntry* getSymByName(std::string name);
+	TemVarSymEntry* getTemVarSymByName(std::string name);
+
 
     bool checkIsConst(std::string name, int* value);
 
@@ -74,15 +80,24 @@ public:
 private:
     void addEntry(MipsEntry* e) { mipsCodeList.push_back(e); }
 
-    std::string getRegister(std::string varName, bool load);
+    std::string getRegister(std::string varName, bool load, bool noStore);
 
     void pushStack(std::string reg);
 
     void loadValue(std::string reg, int offset);
 
     int getStringIndex(std::string s) {
+        std::string ss;
+        for (auto c: s) {
+            if (c == '\\') {
+                ss = ss + '\\';
+            }
+            else {
+            }
+            ss = ss + c;
+        }
         for (int i = 0; i < stringList.size(); i++) {
-            if (stringList[i] == s) {
+            if (stringList[i] == ss) {
                 return i;
             }
         }
@@ -97,6 +112,24 @@ private:
             }
         }
         return "";
+    }
+
+    void freeAllTemReg() {
+        for (int i = 0; i < 10; i++) {
+            temRegister[i].setFree();
+        }
+    }
+
+    void freeAllGloReg() {
+        for (int i = 0; i < 8; i++) {
+            globalRegister[i].setFree();
+        }
+    }
+
+    void freeAllAreg() {
+        for (int i = 0; i < 4; i++) {
+            aRegister[i].setFree();
+        }
     }
 
     std::string getTemRegByName(std::string name) {
@@ -117,9 +150,11 @@ private:
         return "";
     }
     int prevPos = 0;
-    std::string graspTemReg();
+    std::string graspTemReg(bool noStore = false);
 
-    void storeBack(std::string reg, bool allocate, bool fake);
+    std::vector<int> topOffsetQue{0};
+
+    void storeBack(std::string reg, bool noFree = false);
     void loadValue(std::string name, std::string reg);
     int varInTemRegister(std::string name);
     int varInGloRegister(std::string name);
@@ -128,7 +163,7 @@ private:
     void assignGloReg2LocVar(SymbolTable* sym);
     std::string getNameByReg(std::string reg);
 
-    void storeGloRegOfCaller(SymbolTable* symTab);
+    void pushAllGloRegOfCaller(SymbolTable* symTab);
     int callerLocalVarInReg = 0;
     void restoreGloRegOfCaller(SymbolTable* symTab);
     void storeCallerTemReg();
@@ -136,7 +171,7 @@ private:
     void storeCallerAReg();
     void restoreCallerAReg();
 
-    void pushReg(std::string reg, bool fake false);
+    void pushReg(std::string reg, bool fake = false);
     void popReg(std::string reg);
 
     std::string curFuncName = "global";
@@ -146,7 +181,8 @@ private:
     std::vector<MipsEntry*> mipsCodeList;
     std::vector<std::string> stringList;
     EnvTable env;
-    std::map<std::string, int> temVarOffsetMap; // temVarName : offset
+
+    // std::map<std::string, std::map<std::string, int>> temVarOffsetMap; // funcName : map(temVarName : offset)
 
     std::vector<Register> globalRegister;
     std::vector<Register> temRegister;

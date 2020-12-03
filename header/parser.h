@@ -57,7 +57,7 @@ public:
     SynNode* termP(int*, bool*, std::string&);
     SynNode* factorP(int*, bool*, std::string&);
     SynNode* expressionP(int*, bool*, std::string&);
-    SynNode* callFuncSenP(int*);
+    SynNode* callFuncSenP(int*, std::string&);
     SynNode* valueArgueListP(FuncSymEntry* func);
     SynNode* assignSenP();
     // if not following else tk, lastLabel should be ""
@@ -132,7 +132,16 @@ public:
 
 // code gene
     void addString2Global(std::string s) {
-        globalStringList.push_back(s);
+        std::string ss;
+        for (auto c: s) {
+            if (c == '\\') {
+                ss = ss + '\\';
+            }
+            else {
+            }
+            ss = ss + c;
+        }
+        globalStringList.push_back(ss);
     }
 
     void printInterCode(std::ostream& os) {

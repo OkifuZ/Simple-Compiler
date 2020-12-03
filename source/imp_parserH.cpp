@@ -629,7 +629,7 @@ inline SynNode *Parser::factorP(int* attr_intType_syn, bool* isCon_syn, string& 
         else if (cacheContainsSym(TYPE_SYM::LPARENT))
         {
             flushPreRead();
-            node->addChild(callFuncSenP(attr_intType_syn));
+            node->addChild(callFuncSenP(attr_intType_syn, facVar));
         }
     }
     else
@@ -706,11 +706,12 @@ inline SynNode *Parser::arguListP(int *attr_num_syn, FuncSymEntry *func)
         int argId = 0;
         // 这里应该不用检查重复
         addSymbolEntry(
-            new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX(), argId)
+            new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX(), argId, func)
         );
         argId++;
         func->addParaType(attr_type_tem);
-        intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
+        func->formalArgNameList.push_back(attr_strName);
+        //intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
         n++;
         while (symbol.type == TYPE_SYM::COMMA)
         {
@@ -723,11 +724,12 @@ inline SynNode *Parser::arguListP(int *attr_num_syn, FuncSymEntry *func)
                 addErrorMessage(attr_line, 'b', "参数列表中重复定义名字");
             }
             addSymbolEntry(
-                new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX(), argId)
+                new FormalVarSymEntry(attr_strName, attr_cate, attr_type_tem, func->getINDEX(), argId, func)
             );
             argId++;
             func->addParaType(attr_type_tem);
-            intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
+            func->formalArgNameList.push_back(attr_strName);
+            //intermediate->addInterCode(INT_OP::PARA, func->getName(), func->getTYPE(), attr_strName, attr_type_tem, false, "", _INV, false);
             n++;
         }
     }
@@ -770,11 +772,11 @@ SynNode *Parser::refuncDefineP()
         printPos(22009);
     }
     symFUNC->setARGNUM(attr_argnum);
+    int attr_retNum = 0;
     if (symbol.type == TYPE_SYM::LBRACE)
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        int attr_retNum = 0;
         node->addChild(compoundSenP(true, attr_type, &attr_retNum));
         if (attr_retNum == 0) {
             addErrorMessage(symbol.line, 'h', "有返回值的函数缺少return语句");
@@ -861,7 +863,7 @@ SynNode *Parser::nonrefuncDefineP()
     return node;
 }
 
-inline SynNode *Parser::callFuncSenP(int* attr_intType_syn)
+inline SynNode *Parser::callFuncSenP(int* attr_intType_syn, string& temVar)
 {
     int attr_line = -1;
     string attr_strName;
@@ -877,11 +879,13 @@ inline SynNode *Parser::callFuncSenP(int* attr_intType_syn)
     {
         node = new NonTerNode(TYPE_NTS::CALL_NONREFUNC_SEN, true);
         *attr_intType_syn = _TYPE_VOID;
+        temVar = "";
     }
     else
     {
         node = new NonTerNode(TYPE_NTS::CALL_REFUNC_SEN, true);
         *attr_intType_syn = func->getTYPE();
+        temVar = intermediate->nextTempVar();
     }
     node->addChild(iden);
     attr_line = symbol.line;
@@ -904,7 +908,7 @@ inline SynNode *Parser::callFuncSenP(int* attr_intType_syn)
         printPos(88278);
     }
     intermediate->addInterCode(INT_OP::JAL, "", _INV, attr_strName, _INV, false, "", _INV, false);
-    intermediate->addInterCode(INT_OP::ENDCALL, "", _INV, attr_strName, func->getTYPE(), false, "", _INV, false);
+    intermediate->addInterCode(INT_OP::ENDCALL, "", _INV, attr_strName, func->getTYPE(), false, temVar, _INV, false);
     return node;
 }
 
@@ -1054,7 +1058,7 @@ inline SynNode *Parser::ifelseSenP(bool inFunc, string lastLABEL, int attr_retTy
         printPos(9947252);
     }
     string t;
-    node->addChild(sentenceP(inFunc, t, attr_retType));
+    node->addChild(sentenceP(inFunc, t, attr_retType, attr_retNum_syn));
     intermediate->addInterCode(INT_OP::J, "", _INV, lastLABEL, _INV, false, "", _INV, false); // add jump to label (LAST LABEL)
     intermediate->addInterCode(INT_OP::LABEL, "", _INV, label_of_this, _INV, false, "", _INV, false); //add label (OF THIS) for end 
 
@@ -1062,7 +1066,7 @@ inline SynNode *Parser::ifelseSenP(bool inFunc, string lastLABEL, int attr_retTy
     {
         node->addChild(new TerNode(symbol));
         nextSym();
-        node->addChild(sentenceP(inFunc, lastLABEL, attr_retType)); // add label (LAST LABEL)
+        node->addChild(sentenceP(inFunc, lastLABEL, attr_retType, attr_retNum_syn)); // add label (LAST LABEL)
     }
     return node;
 }
@@ -1405,7 +1409,7 @@ inline SynNode *Parser::defaultP(bool isFunc, int attr_retType_inh, int* attr_re
         node->addChild(new TerNode(symbol));
         nextSym();
         node->addChild(sentenceP(isFunc, "", attr_retType_inh, attr_retNum_syn));
-        popCurTable();
+        //popCurTable();
     }
     else
     {
@@ -1556,11 +1560,15 @@ SynNode *Parser::returnSenP(int attr_retType_inh, int* attr_retNum_syn, bool inM
             {
                 node->addChild(new TerNode(symbol));
                 nextSym();
+                intermediate->addInterCode(INT_OP::RETURN, getCurFuncName(), _INV, temVar, attr_expType, isCon, "", _INV, false);
             }
             else {
                 printPos(1984);
                 addErrorMessage(attr_line, 'l', "返回语句缺少右括号");
             }
+        }
+        else { // void return
+            intermediate->addInterCode(INT_OP::RETURN, getCurFuncName(), _INV, "", _INV, false, "", _INV, false);
         }
         if (inMain) {
             // pass
@@ -1643,7 +1651,8 @@ inline SynNode *Parser::sentenceP(bool inFunc, string lastLABEL, int attr_type_i
         {
             int attr_type, attr_val;
             flushPreRead();
-            node->addChild(callFuncSenP(&attr_type));
+            string temVar;
+            node->addChild(callFuncSenP(&attr_type, temVar));
         }
         else
         {

@@ -13,7 +13,8 @@ enum class INT_OP{ERROR=-1, ADD=0, SUB, MULT, DIV, ASSIGN,
                   SCAN, PRINT, J, EXIT, FUNC, 
                   ENDFUNC, ARRINI, 
                   BLE, BLT, BGE, BGT, BNE, BEQ, LABEL,
-                  JAL, BEFCALL, ENDCALL, PARA, PUSH};
+                  JAL, BEFCALL, ENDCALL, /*PARA,*/ PUSH,
+                  RETURN};
 
 class InterCodeEntry;
 class InterOprand;
@@ -56,7 +57,8 @@ private:
                                            "SCAN", "PRINT", "J", "EXIT", "FUNC", 
                                            "ENDFUNC", "ARRINI",
                                            "BLE", "BLT", "BGE", "BGT", "BNE", "BEQ", "LABEL",
-                                           "JAL", "BEFCALL", "ENDCALL", "PARA", "PUSH"};
+                                           "JAL", "BEFCALL", "ENDCALL", /*"PARA",*/ "PUSH",
+                                           "RETURN"};
 
 };
 

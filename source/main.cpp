@@ -6,9 +6,9 @@
 #include <fstream>
 #include <iostream>
 
-
-
 int main() {
+
+
 	std::ifstream infile("testfile.txt");
 	std::ofstream outfile("error.txt");
 	std::ofstream interCodeFile("interCode.txt");
@@ -19,6 +19,7 @@ int main() {
 	parser.printError(outfile);
 	parser.printInterCode(interCodeFile);
 	MipsGenerator mipsGene(&parser);
+	mipsGene.preProcessing();
 	mipsGene.GeneMipsCode();
 	mipsGene.printMipsCode(mipsFile);
 #ifdef PRINT_ERROR_MESSAGE

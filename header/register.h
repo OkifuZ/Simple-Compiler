@@ -30,6 +30,7 @@ public:
     }
 
     void setVar(std::string name) {
+        this->setFree();
         if (name[0] == '#') {
             isBusyT = true;
         }

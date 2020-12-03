@@ -16,6 +16,11 @@
 #define _TYPE_CHAR 1
 #define _TYPE_STR 2
 
+class SymTableEntry;
+class ArraySymEntry;
+class ScalerSymEntry;
+class FormalVarSymEntry;
+class FuncSymEntry;
 
 class SymTableEntry {
 public:
@@ -74,39 +79,51 @@ public:
 	int value = -1;
 };
 
-class FormalVarSymEntry : public ScalerSymEntry {
-public:
-	FormalVarSymEntry(std::string name, int cate, int type, int parFuncPos_, int argId_):
-		ScalerSymEntry(name, cate, type), parFuncPos(parFuncPos_), argId(argId_) {}
-
-	int getPAR_FUNC_POS() { return parFuncPos; }
-	void setPAR_FUNC_POS(int pos) { parFuncPos = pos; }
-	int argId = -1;
-
-private:
-	int parFuncPos = -1;
-	
-};
-
 class FuncSymEntry : public SymTableEntry {
 public:
 	FuncSymEntry(std::string name, int cate, int type, int argnum=0) :
 		SymTableEntry(name, cate, type), argNum(argnum) {}
 
 	void addParaType(int type) { paraTypeList.push_back(type); }
-
 	int getARGNUM() { return argNum; }
 	std::vector<int> 
 		getParaTypeList() { return paraTypeList; }
-
+	std::vector<std::string> formalArgNameList;
 	void setARGNUM(int n) { argNum = n; }
 
 private:
-	int argNum = -1;
 	std::vector<int> paraTypeList;
+	int argNum = -1;
 
 };
 
+class FormalVarSymEntry : public ScalerSymEntry {
+public:
+	FormalVarSymEntry(std::string name, int cate, int type, int parFuncPos_, int argId_, FuncSymEntry* func_):
+		ScalerSymEntry(name, cate, type), parFuncPos(parFuncPos_), argId(argId_), func(func_) {}
+
+	int getPAR_FUNC_POS() { return parFuncPos; }
+	void setPAR_FUNC_POS(int pos) { parFuncPos = pos; }
+	int argId = -1;
+	int getFuncArgNum() {
+		return func->getARGNUM();
+	}
+private:
+	int parFuncPos = -1;
+	FuncSymEntry* func = nullptr;
+};
+
+class TemVarSymEntry {
+public:
+	TemVarSymEntry(std::string name_, int type_) : name(name_), type(type_) {}
+
+	std::string name;
+	int type;
+	int offset = -1;
+
+private: 
+
+};
 
 class SymbolTable {
 public:
@@ -121,7 +138,6 @@ public:
 
 	bool duplicateName(std::string name);
 	SymTableEntry* getSymByName(std::string name);
-
 	void printSymTable(std::ostream& os);
 
 	int calculateOffset();
@@ -141,8 +157,18 @@ public:
 		}
 	}
 
+	TemVarSymEntry* getTemSymByName(std::string name) {
+		for (auto it : temVarTable) {
+			if (it->name == name) {
+				return it;
+			}
+		}
+		return nullptr;
+	}
+
 	
 	std::vector<SymTableEntry*> symTable;
+	std::vector<TemVarSymEntry*> temVarTable;
 private:
 	
 };
@@ -188,6 +214,8 @@ public:
 		}
 		return nullptr;
 	}
+
+
 
 	bool checkDuplicate(std::string name) {
 		return top->duplicateName(name);
